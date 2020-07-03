@@ -13,4 +13,14 @@ RSpec.describe Project, type: :model do
     project.valid?
     expect(project.errors[:name]).to include("can't be blank")
   end
+
+  it 'export to_csv_by_sql' do
+    let!(:projects) { create_list(:project, 2) }
+    Project.to_csv_by_sql
+  end
+
+  it 'export to_csv' do
+    let!(:projects) { create_list(:project, 2) }
+    Project.to_csv
+  end
 end
