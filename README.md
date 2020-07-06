@@ -68,6 +68,53 @@ to_csv() は ActiveRecord::Relation を in_batch で回して CSV ファイル�
 メモリ上の変数や ActoveRecord で取得した レコード内容は eq などで値をチェックして行くことができます。  
 外部ファイル出力結果をどうやって rspec でテストするかをここで示します。  
 
+### ファイル出力内容のテスト
+
+projects テーブルの内容を ctiverEcord や CSV クラスをつかって次のように実装しているメソッドがあります。
+
+```
+  def self.to_csv
+    headers = %w[id name description]
+    File.open(csv_name, 'w:UTF-8') do |file|
+      file.write BOM
+
+      csv = CSV.new(file, headers: headers, write_headers: true)
+      Project.order(:id).in_batches.each_record do |row|
+        csv << [row.id, row.name, row.description]
+      end
+    end
+  end
+```
+
+このメソッドが生成するファイル内容をチェックするテストを２つ書きました。  
+1 つは、 File を一括読み込みしてその内容をチェックするものです。  
+もう一つは、File への書き込処理を mock にして メモリー上にファイル内容を保持するようにして、そお内容をチェックするものです。  
+
+ファイルを実際に読み混んで内容をチェックするには次のようにします。
+```
+expect(File.read(Project.csv_name)).to eq expect_lines
+```
+
+ファイルへ書き込まず、メモリー上へ書き込むようにするには次のようにします。
+```
+      before do
+        allow(File).to receive(:open)
+          .with(Project.csv_name, 'w:UTF-8')
+          .and_yield(buffer)
+      end
+```
+ファイル名 "Project.csv_name" への書き込みは、ファイルでなく
+let(:buffer) { StringIO.new } へ書き込まえることになります。  
+
+buffer へ書き込まれた内容のチェックは,次のように行います。
+```
+      it 'contents of csv file' do
+        subject
+        expect(buffer.string).to eq expect_lines
+      end
+```
+この方法では、時間がかかるファイル IO を回避できるし、生成されたファイルの後始末も不要になります。  
+
 
 参考情報
 - <https://github.com/samg/diffy>  
@@ -76,8 +123,12 @@ to_csv() は ActiveRecord::Relation を in_batch で回して CSV ファイル�
 - <https://www.altova.com/blog/how-to-compare-csv-files/>
   HOW TO COMPARE CSV FILES OR COMPARE A CSV FILE TO A DATABASE TABLE
 
-
 ## 時間の操作
+
+to_csv() メソッドで生成する csv ファイル名には、実機日時が埋め込まれるようになっています。  
+テスト実機の度に日時は変化します。そのようなものをテストするんは大変です。  
+実行日時を任意の日時に設定したら、時間を止めてしまう応報があります。  
+これを利用すると、出力ファイル名を一定にすることができます。
 
 参考情報
 - <https://www.ryotaku.com/entry/2019/08/27/000000>  
@@ -88,6 +139,12 @@ to_csv() は ActiveRecord::Relation を in_batch で回して CSV ファイル�
 
 ## DB の id をリセットする
 
+csv ファイルには、 record id が含まれています。  
+通常は, レコードの id はテスト実機の度に変化してしまいます。  
+テーブルお Primary Key をリセットすることができれば、テスト処理中に生成されるレコードの id を一定にすることができます。
+
+
+参考情報
 - <https://medium.com/@tiffanytang_30644/how-to-reset-your-activerecord-postgresql-and-sqlite-id-sequences-with-a-simple-ruby-gem-15b90c6fbdac>  
   How to Reset Your ActiveRecord PostgreSQL and SQLite ID Sequences with a Simple Ruby Gem
 
