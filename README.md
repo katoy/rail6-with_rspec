@@ -3,7 +3,7 @@
 ここでは rsila6 + rspec 環境で DB 内容を csv 出力するメソッドを作成する。  
 そして、このメソッドの rspec をどの様に書いていくかを試して行きます。
 
-## rails6 + rspec 環境のの構築
+## rails6 + rspec 環境の構築
 
 rails6 + rspec 環境の作成については以下を参照すること。
 
@@ -75,3 +75,19 @@ to_csv() は ActiveRecord::Relation を in_batch で回して CSV ファイル�
 
 - <https://www.altova.com/blog/how-to-compare-csv-files/>
   HOW TO COMPARE CSV FILES OR COMPARE A CSV FILE TO A DATABASE TABLE
+
+
+## 時間の操作
+
+参考情報
+- <https://www.ryotaku.com/entry/2019/08/27/000000>  
+  現在日時をズラしたテストが実行できる「TimeHelpers（travel・travel_back・travel_to）」
+
+- <https://himakuro.com/modify-timezone-to-jst-in-rails#i-4>  
+  Railsのtime_zoneを変更する
+
+## DB の id をリセットする
+
+- <https://medium.com/@tiffanytang_30644/how-to-reset-your-activerecord-postgresql-and-sqlite-id-sequences-with-a-simple-ruby-gem-15b90c6fbdac>  
+  How to Reset Your ActiveRecord PostgreSQL and SQLite ID Sequences with a Simple Ruby Gem
+

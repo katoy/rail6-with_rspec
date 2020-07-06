@@ -3,6 +3,6 @@
 FactoryBot.define do
   factory :project do
     sequence(:name) { |n| "Project #{n}" }
-    description { 'A test project.' }
+    sequence(:description) { |n| "A test project #{n}." }
   end
 end
