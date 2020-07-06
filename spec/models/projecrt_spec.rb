@@ -19,6 +19,19 @@ RSpec.describe Project, type: :model do
     end
   end
 
+  shared_context "project create projects" do
+    let!(:projects) do
+      ret = create_list(:project, 2)
+      2.times do |idx|
+        ret[idx].update!(
+          name: "Project #{idx + 1}",
+          description: "Test project #{idx + 1}."
+        )
+      end
+      ret
+    end
+  end
+
   it 'is valid with name' do
     project = Project.new(name: 'Aaron')
     expect(project).to be_valid
@@ -30,8 +43,8 @@ RSpec.describe Project, type: :model do
     expect(project.errors[:name]).to include("can't be blank")
   end
 
-  context ":csv_name" do
-    subject{Project.csv_name}
+  context "#csv_name" do
+    subject{ Project.csv_name }
     let(:the_time){Time.zone.parse('2020-01-02 08:59:59')}
     include_context "project time_travel"
     let(:expect_csv_name) do
@@ -41,9 +54,9 @@ RSpec.describe Project, type: :model do
     it{ is_expected.to eq expect_csv_name }
   end
 
-  context ':to_csv_by_sql' do
+  context '#to_csv_by_sql' do
     include_context "project clear and reset pk"
-    let!(:projects){ create_list(:project, 2) }
+    include_context "project create projects"
     let!(:the_time){Time.zone.parse('2020-01-02 08:59:00')}
     include_context "project time_travel"
     before do
@@ -57,26 +70,41 @@ RSpec.describe Project, type: :model do
     end
   end
 
-  context ':to_csv' do
+  context '#to_csv' do
+    subject{Project.to_csv}
     include_context "project clear and reset pk"
-    let!(:projects){ create_list(:project, 2) }
+    include_context "project create projects"
+
     let!(:the_time){Time.zone.parse('2020-01-02 08:59:01')}
     include_context "project time_travel"
     before do
       File.delete(Project.csv_name) if File.exist?(Project.csv_name)
-      Project.to_csv
-    end
-    let(:expect_lines) do
-      [
-        "\uFEFF" + "id,name,description\n",
-        "1,Project 3,A test project 4.\n",
-        "2,Project 4,A test project 5.\n"
-      ]
     end
 
-    it "contents of csv file" do
-      expect(File.open(Project.csv_name) { |f| p f.readlines })
-        .to eq expect_lines
+    let(:expect_lines) do
+      "\uFEFF" + "id,name,description\n" \
+      "1,Project 1,Test project 1.\n" \
+      "2,Project 2,Test project 2.\n"
+    end
+
+    context "check contens with file" do
+      it "contents of csv file" do
+        subject
+        expect(File.read(Project.csv_name)).to eq expect_lines
+      end
+    end
+
+    context "check contents without file" do
+      let(:buffer) { StringIO.new }
+      before do
+        allow(File).to receive(:open).with(Project.csv_name, 'w:UTF-8')
+                   .and_yield(buffer)
+      end
+
+      it "contents of csv file" do
+        subject
+        expect(buffer.string).to eq expect_lines
+      end
     end
   end
 end
