@@ -1,13 +1,9 @@
 # frozen_string_literal: true
 
 require 'rails_helper'
+require 'database_cleaner'
 
 RSpec.describe Project, type: :model do
-  shared_context 'project clear and reset pk' do
-    Project.destroy_all
-    Project.reset_pk_sequence
-  end
-
   shared_context 'project time_travel' do
     before do
       travel_to the_time
@@ -55,7 +51,6 @@ RSpec.describe Project, type: :model do
   end
 
   context '#to_csv_by_sql' do
-    include_context 'project clear and reset pk'
     include_context 'project create projects'
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:00') }
     include_context 'project time_travel'
@@ -72,7 +67,6 @@ RSpec.describe Project, type: :model do
 
   context '#to_csv' do
     subject { Project.to_csv }
-    include_context 'project clear and reset pk'
     include_context 'project create projects'
 
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:01') }
@@ -82,9 +76,10 @@ RSpec.describe Project, type: :model do
     end
 
     let(:expect_lines) do
+      ids = Project.order(:id).pluck(:id)
       "\uFEFF" + "id,name,description\n" \
-      "1,Project 1,Test project 1.\n" \
-      "2,Project 2,Test project 2.\n"
+      "#{ids[0]},Project 1,Test project 1.\n" \
+      "#{ids[1]},Project 2,Test project 2.\n"
     end
 
     context 'check contens with file' do

@@ -4,10 +4,10 @@
 #
 # Table name: projects
 #
-#  id          :integer          not null, primary key
-#  description :text
+#  id          :bigint           not null, primary key
+#  description :text(65535)
 #  due_on      :date
-#  name        :string
+#  name        :string(255)
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
 #
@@ -16,19 +16,30 @@ class Project < ApplicationRecord
   BOM = "\uFEFF"
   TIME_FORMAT = '%F_%H_%M_%S_%L%Z'
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { case_sensitive: true }
 
   def self.csv_name
     "#{Rails.root}/csvs/projects_#{Time.zone.now.strftime(TIME_FORMAT)}.csv"
   end
 
   def self.to_csv_by_sql
-    sql = 'SELECT id, name, description FROM projects ORDER BY id;'
-    db_name = Rails.configuration.database_configuration[Rails.env]['database']
-    cmd = "sqlite3 -cmd '.headers on' -cmd '.mode csv' " \
-      "-cmd '.output #{csv_name}' " \
-      "#{db_name} '#{sql}'"
-    system cmd
+    adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
+    if adapter == 'mysql2'
+      sql =
+        "SELECT id, name, description " \
+        "FROM projects " \
+        "ORDER BY id ASC " \
+        "INTO OUTFILE '#{csv_name}' " \
+        "FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';"
+      Project.connection.execute(sql)
+    elsif adapter == "sqlite3"
+      sql = 'SELECT id, name, description FROM projects ORDER BY id;'
+      db_name = Rails.configuration.database_configuration[Rails.env]['database']
+      cmd = "sqlite3 -cmd '.headers on' -cmd '.mode csv' " \
+        "-cmd '.output #{csv_name}' " \
+        "#{db_name} '#{sql}'"
+      system cmd
+    end
   end
 
   # See

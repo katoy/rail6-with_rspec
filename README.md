@@ -141,10 +141,25 @@ to_csv() メソッドで生成する csv ファイル名には、実機日時が
 
 csv ファイルには、 record id が含まれています。  
 通常は, レコードの id はテスト実機の度に変化してしまいます。  
-テーブルお Primary Key をリセットすることができれば、テスト処理中に生成されるレコードの id を一定にすることができます。
+テーブルの Primary Key をリセットすることができれば、テスト処理中に生成されるレコードの id を一定にすることができます。
+
+==> DB を sqlite3 -> MySQL に変更した。 MySQL の場合 primary_key リセットがうまくできなかった。
+primary_key リセットはあきらて、テスト時の expected の値の id を DB 情報から取得する様に変更した。
 
 
 参考情報
 - <https://medium.com/@tiffanytang_30644/how-to-reset-your-activerecord-postgresql-and-sqlite-id-sequences-with-a-simple-ruby-gem-15b90c6fbdac>  
   How to Reset Your ActiveRecord PostgreSQL and SQLite ID Sequences with a Simple Ruby Gem
+
+
+###
+
+参考情報
+- <https://weblabo.oscasierra.net/mysql-select-into-outfile/>  
+  MySQLのSELECT結果をCSVファイルで出力する方法
+
+標準設定のままだと, SQL で CSV 出力させようとすると  
+"he MySQL server is running with the –secure-file-priv option so it cannot execute this statement"  
+のエラーになる。  
+my.ini の編集が必要になる。  
 
