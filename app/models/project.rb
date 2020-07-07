@@ -26,19 +26,24 @@ class Project < ApplicationRecord
     adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
     if adapter == 'mysql2'
       sql =
-        "SELECT id, name, description " \
-        "FROM projects " \
-        "ORDER BY id ASC " \
+        "(SELECT 'id', 'name', 'description') " \
+        "UNION " \
+        "(SELECT id, name, description " \
+        " FROM projects " \
+        " ORDER BY id ASC) " \
         "INTO OUTFILE '#{csv_name}' " \
         "FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';"
       Project.connection.execute(sql)
     elsif adapter == "sqlite3"
       sql = 'SELECT id, name, description FROM projects ORDER BY id;'
-      db_name = Rails.configuration.database_configuration[Rails.env]['database']
+      db_name =
+        Rails.configuration.database_configuration[Rails.env]['database']
       cmd = "sqlite3 -cmd '.headers on' -cmd '.mode csv' " \
         "-cmd '.output #{csv_name}' " \
         "#{db_name} '#{sql}'"
       system cmd
+    else
+      raise "No suport the db dapter: #{adapter}"
     end
   end
 
@@ -47,10 +52,14 @@ class Project < ApplicationRecord
   # BOM付きCSVファイルを生成する
   def self.to_csv
     headers = %w[id name description]
+    csv_options = {
+      headers: headers, write_headers: true,
+      quote_char: '"', force_quotes: true
+    }
     File.open(csv_name, 'w:UTF-8') do |file|
       file.write BOM
 
-      csv = CSV.new(file, headers: headers, write_headers: true)
+      csv = CSV.new(file, **csv_options)
       Project.order(:id).in_batches.each_record do |row|
         csv << [row.id, row.name, row.description]
       end

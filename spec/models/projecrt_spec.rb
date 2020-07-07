@@ -17,14 +17,19 @@ RSpec.describe Project, type: :model do
 
   shared_context 'project create projects' do
     let!(:projects) do
-      ret = create_list(:project, 2)
-      2.times do |idx|
-        ret[idx].update!(
+      2.times.map do |idx|
+        create(
+          :project,
+          id: idx + 1,
           name: "Project #{idx + 1}",
           description: "Test project #{idx + 1}."
         )
       end
-      ret
+    end
+    let(:expect_lines) do
+      '"id","name","description"' + "\n" \
+      '"1","Project 1","Test project 1."' + "\n" \
+      '"2","Project 2","Test project 2."' + "\n"
     end
   end
 
@@ -51,41 +56,37 @@ RSpec.describe Project, type: :model do
   end
 
   context '#to_csv_by_sql' do
+    subject { Project.to_csv_by_sql }
     include_context 'project create projects'
+
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:00') }
     include_context 'project time_travel'
     before do
       File.delete(Project.csv_name) if File.exist?(Project.csv_name)
-      Project.to_csv_by_sql
     end
 
     it do
-      expect(File.exist?(Project.csv_name)).to eq true
-      # TODO: ファイル内容を確認すること
+      subject
+      expect(File.read(Project.csv_name)).to eq expect_lines
     end
   end
 
   context '#to_csv' do
     subject { Project.to_csv }
     include_context 'project create projects'
+    let(:bomed_expect_lines) { "\uFEFF" + expect_lines }
 
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:01') }
     include_context 'project time_travel'
-    before do
-      File.delete(Project.csv_name) if File.exist?(Project.csv_name)
-    end
 
-    let(:expect_lines) do
-      ids = Project.order(:id).pluck(:id)
-      "\uFEFF" + "id,name,description\n" \
-      "#{ids[0]},Project 1,Test project 1.\n" \
-      "#{ids[1]},Project 2,Test project 2.\n"
-    end
+    context 'check contents with file' do
+      before do
+        File.delete(Project.csv_name) if File.exist?(Project.csv_name)
+      end
 
-    context 'check contens with file' do
       it 'contents of csv file' do
         subject
-        expect(File.read(Project.csv_name)).to eq expect_lines
+        expect(File.read(Project.csv_name)).to eq bomed_expect_lines
       end
     end
 
@@ -99,7 +100,7 @@ RSpec.describe Project, type: :model do
 
       it 'contents of csv file' do
         subject
-        expect(buffer.string).to eq expect_lines
+        expect(buffer.string).to eq bomed_expect_lines
       end
     end
   end
