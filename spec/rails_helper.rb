@@ -34,8 +34,11 @@ rescue ActiveRecord::PendingMigrationError => e
   puts e.to_s.strip
   exit 1
 end
-RSpec.configure do |config|
 
+# Rails.logger = Logger.new(STDOUT) # Rails.loggerを出す
+# ActiveRecord::Base.logger = Logger.new(STDOUT) # SQLログ出す
+
+RSpec.configure do |config|
   # RSpecの実行前に一度、実行
   config.before(:suite) do
     # DBを綺麗にする手段を指定、トランザクションを張ってrollbackするように指定

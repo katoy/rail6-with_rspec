@@ -143,16 +143,15 @@ csv ファイルには、 record id が含まれています。
 通常は, レコードの id はテスト実機の度に変化してしまいます。  
 テーブルの Primary Key をリセットすることができれば、テスト処理中に生成されるレコードの id を一定にすることができます。
 
-==> DB を sqlite3 -> MySQL に変更した。 MySQL の場合 primary_key リセットがうまくできなかった。
-primary_key リセットはあきらて、テスト時の expected の値の id を DB 情報から取得する様に変更した。
-
+==> DB を sqlite3 -> MySQL に変更した。 
+すると, MySQL の場合 primary_key リセットがうまくできなかった。
+primary_key リセットはあきらめて、テスト時の expected の値の id を DB 情報から取得する様に変更した。
 
 参考情報
 - <https://medium.com/@tiffanytang_30644/how-to-reset-your-activerecord-postgresql-and-sqlite-id-sequences-with-a-simple-ruby-gem-15b90c6fbdac>  
   How to Reset Your ActiveRecord PostgreSQL and SQLite ID Sequences with a Simple Ruby Gem
 
-
-###
+### Mysql について
 
 参考情報
 - <https://weblabo.oscasierra.net/mysql-select-into-outfile/>  
@@ -162,4 +161,57 @@ primary_key リセットはあきらて、テスト時の expected の値の id 
 "he MySQL server is running with the –secure-file-priv option so it cannot execute this statement"  
 のエラーになる。  
 my.ini の編集が必要になる。  
+
+### 
+
+- <https://www.techscore.com/blog/2017/12/04/fast_and_low-load_processing_method_when_exporting_csv_from_db_with_rails/>  
+  RailsでDBからCSVエクスポートする時に高速かつ低負荷な処理方法とは？
+
+- <https://tech.recruit-mp.co.jp/server-side/post-19614/>  
+  Railsアプリの処理を100倍以上に高速化して得られた知見
+
+
+### CSV 出力のパフォーマンス
+
+大容量データを SQL 出力する際の実装によるパフォーマンス比較をしていく。
+ますは、大量データを作成する rkae task に作成をする。  
+そして、そのデータを使って csv 出力の速度・メモリー量などを計測するテストを作る。  
+(実際の DB では複数のテーブルが関連して N+1 問題が発声したりする。  
+こっこでは、まずは 1 テーブルの出力において、実装の差がパフォーマンスに与える影響を示していく)
+
+- 100万件データ作成をする rake task 
+
+insert_all! をつかって 10000  レコードずつ SQL 発行している （百万件なら 100 回の SQL)
+
+```bash
+$time rake "make_big_db:projects[1000000]"
+#-- created 1000000 recoreds.
+
+real	1m5.553s
+user	0m54.452s
+sys	0m1.402s
+```
+
+```bash
+$rails c
+Loading development environment (Rails 6.0.3.2)
+[1] pry(main)> Project.count
+   (0.4ms)  SET NAMES utf8mb4,  @@SESSION.sql_mode = CONCAT(CONCAT(@@sql_mode, ',STRICT_ALL_TABLES'), ',NO_AUTO_VALUE_ON_ZERO'),  @@SESSION.sql_auto_is_null = 0, @@SESSION.wait_timeout = 2147483
+   (22.0ms)  SELECT COUNT(*) FROM `projects`
+=> 1000000
+[2] pry(main)> Project.first
+  Project Load (0.3ms)  SELECT `projects`.* FROM `projects` ORDER BY `projects`.`id` ASC LIMIT 1
+=> #<Project:0x00007fd11877d5f8
+ id: 1,
+ name: "Project 1",
+ description: "Test project 1",
+ due_on: nil,
+ created_at: Tue, 07 Jul 2020 17:36:20 JST +09:00,
+ updated_at: Tue, 07 Jul 2020 17:36:20 JST +09:00>
+```
+
+
+参考情報
+- <https://qiita.com/taiteam/items/1b1be0578d1dc6e00a17>  
+  Rails6.0におけるbulk insert
 
