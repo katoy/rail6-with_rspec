@@ -102,10 +102,10 @@ RSpec.describe Project, type: :model do
       context 'check contents with file' do
         before do
           File.delete(Project.csv_name) if File.exist?(Project.csv_name)
+          subject
         end
 
-        it 'contents of csv file' do
-          subject
+        it do
           expect(File.read(Project.csv_name)).to eq bomed_expect_contents
         end
       end
@@ -116,12 +116,31 @@ RSpec.describe Project, type: :model do
           allow(File).to receive(:open)
             .with(Project.csv_name, 'w:UTF-8')
             .and_yield(buffer)
+          subject
         end
 
-        it 'contents of csv file' do
-          subject
+        it do
           expect(buffer.string).to eq bomed_expect_contents
         end
+      end
+    end
+
+    context "with opts {projects: Project.where(..)}" do
+      let(:opts) do
+        {
+          projects: Project.where.not(id: 2).order(:id)
+        }
+      end
+      let(:bomed_expect_contents) do
+        "\uFEFF" + expect_lines[0] + expect_lines[1] + expect_lines[3]
+      end
+      before do
+        File.delete(Project.csv_name) if File.exist?(Project.csv_name)
+        subject
+      end
+
+      it do
+        expect(File.read(Project.csv_name)).to eq bomed_expect_contents
       end
     end
   end

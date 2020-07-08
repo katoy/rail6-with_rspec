@@ -30,19 +30,14 @@ class Project < ApplicationRecord
   def self.to_csv_by_sql(opts = {})
     adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
     if adapter == 'mysql2'
+      projects = target_ar(opts)
       sql =
         "(SELECT 'id', 'name', 'description') " \
         "UNION " \
-        "(SELECT #{CSV_HEADERS.join(', ')} " \
-        " FROM projects " \
-        " ORDER BY id ASC "
-      sql += " LIMIT #{opts[:limit]} " if opts[:limit]
-      sql += " OFFSET #{opts[:offset]} " if opts[:offset]
-      sql +=
-        ') ' \
+        "(#{projects.to_sql}) " \
         "INTO OUTFILE '#{csv_name}' " \
         "FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';"
-        Project.connection.execute(sql)
+      Project.connection.execute(sql)
     elsif adapter == "sqlite3"
       sql = 'SELECT id, name, description FROM projects ORDER BY id'
       sql += "OFFSET #{opts[:offset]} " if opts[:offset]
@@ -67,16 +62,12 @@ class Project < ApplicationRecord
       headers: CSV_HEADERS, write_headers: true,
       quote_char: '"', force_quotes: true
     }
-    projects = Project.order(:id)
-    projects = projects.offset(opts[:offset].to_i) if opts[:offset]
-    projects = projects.limit(opts[:limit].to_i) if opts[:limit]
-    projects = projects.select(*CSV_HEADERS)
-
+    projects = target_ar(opts)
     File.open(csv_name, 'w:UTF-8') do |file|
       file.write BOM
 
       csv = CSV.new(file, **csv_options)
-      projects.order(:id).in_batches.each_record do |row|
+      projects.in_batches.each_record do |row|
         csv << [row.id, row.name, row.description]
       end
     end
@@ -87,7 +78,7 @@ class Project < ApplicationRecord
       headers: CSV_HEADERS, write_headers: true,
       quote_char: '"', force_quotes: true
     }
-    projects = Project.order(:id)
+    projects = opts[:projects] || Project.order(:id)
     projects = projects.offset(opts[:offset].to_i) if opts[:offset]
     projects = projects.limit(opts[:limit].to_i) if opts[:limit]
 
@@ -95,9 +86,16 @@ class Project < ApplicationRecord
       file.write BOM
 
       csv = CSV.new(file, **csv_options)
-      projects.order(:id).in_batches.each_record do |row|
+      projects.in_batches.each_record do |row|
         csv << [row.id, row.name, row.description]
       end
     end
+  end
+
+  def self.target_ar(opts)
+    projects = opts[:projects] || Project.order(:id)
+    projects = projects.offset(opts[:offset].to_i) if opts[:offset]
+    projects = projects.limit(opts[:limit].to_i) if opts[:limit]
+    projects.select(*CSV_HEADERS)
   end
 end
