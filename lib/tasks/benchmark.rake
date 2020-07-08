@@ -12,8 +12,8 @@ namespace :benchmark do
     p opts
 
     Benchmark.bm 12 do |r|
-      r.report "to_csv_x" do
-        Project.to_csv_x(opts)
+      r.report "to_csv_x2" do
+        Project.to_csv_x2(opts)
       end
       r.report "to_csv" do
         Project.to_csv(opts)
@@ -24,8 +24,8 @@ namespace :benchmark do
     end
 
     Benchmark.memory do |r|
-      r.report "to_csv_x" do
-        Project.to_csv_x(opts)
+      r.report "to_csv_x2" do
+        Project.to_csv_x2(opts)
       end
       r.report "to_csv" do
         Project.to_csv(opts)

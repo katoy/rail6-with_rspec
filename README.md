@@ -310,6 +310,10 @@ Calculating -------------------------------------
 select() を行うことで 20 $ の速度アップ、10 % のメモリー使用量削減硬の硬貨があった。  
 
 
+参考情報
+- <https://blog.saeloun.com/2020/04/29/rails-support-descending-order-for-find-each-find-in-batches.html#with-rails-61>
+  Rails 6.1 now supports order option for find_each, find_in_batches and in_batches methods.
+
 
 現時点の DB は単純なレコードの１つのテーブルである。
 この後は 複数のテーブルを 多対多なのの関連をもたせ、N+1問題を避けた csv 出力鳳凰をサクっていく。

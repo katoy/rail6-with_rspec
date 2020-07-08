@@ -23,6 +23,9 @@ class Project < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { case_sensitive: true }
 
+  has_many :project_user_relations
+  has_many :users, through: :project_user_relations
+
   def self.csv_name
     "#{Rails.root}/csvs/projects_#{Time.zone.now.strftime(TIME_FORMAT)}.csv"
   end
@@ -73,6 +76,7 @@ class Project < ApplicationRecord
     end
   end
 
+  # select をしない版
   def self.to_csv_x(opts = {})
     csv_options = {
       headers: CSV_HEADERS, write_headers: true,
@@ -87,6 +91,23 @@ class Project < ApplicationRecord
 
       csv = CSV.new(file, **csv_options)
       projects.in_batches.each_record do |row|
+        csv << [row.id, row.name, row.description]
+      end
+    end
+  end
+
+  # 単純に each する版
+  def self.to_csv_x2(opts = {})
+    csv_options = {
+      headers: CSV_HEADERS, write_headers: true,
+      quote_char: '"', force_quotes: true
+    }
+    projects = target_ar(opts)
+    File.open(csv_name, 'w:UTF-8') do |file|
+      file.write BOM
+
+      csv = CSV.new(file, **csv_options)
+      projects.each do |row|
         csv << [row.id, row.name, row.description]
       end
     end

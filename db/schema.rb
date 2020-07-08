@@ -10,7 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_07_07_234551) do
+ActiveRecord::Schema.define(version: 2020_07_08_075002) do
+
+  create_table "project_user_relations", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "project_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["project_id", "user_id"], name: "index_project_user_relations_on_project_id_and_user_id"
+    t.index ["project_id"], name: "index_project_user_relations_on_project_id"
+    t.index ["user_id"], name: "index_project_user_relations_on_user_id"
+  end
 
   create_table "projects", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "name"
@@ -30,4 +40,6 @@ ActiveRecord::Schema.define(version: 2020_07_07_234551) do
     t.index ["name"], name: "index_users_on_name", unique: true
   end
 
+  add_foreign_key "project_user_relations", "projects"
+  add_foreign_key "project_user_relations", "users"
 end

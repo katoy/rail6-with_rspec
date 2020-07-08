@@ -4,7 +4,11 @@ namespace :make_big_db do
   desc "大量の Pproject の DB をつくる(num; default:10_000)"
   task :projects, [:num] => :environment do |_t, args|
     # system "rails db:drop db:create db:migrate"
-    ActiveRecord::Base.connection.execute("TRUNCATE TABLE projects;")
+    # ActiveRecord::Base.connection.execute("TRUNCATE TABLE projects;")
+    ProjectUserRelation.delete_all
+    Project.delete_all
+    User.delete_all
+
     time = Time.zone.now
     num = 10_000
     num = args.num.to_i if args.num

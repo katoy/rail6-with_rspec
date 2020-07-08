@@ -16,4 +16,7 @@
 class User < ApplicationRecord
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :name,  presence: true, uniqueness: { case_sensitive: true }
+
+  has_many :project_user_relations
+  has_many :projects, through: :project_user_relations
 end
