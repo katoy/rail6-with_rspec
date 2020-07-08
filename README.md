@@ -278,6 +278,39 @@ $wc -l csvs/*.csv
 ヘッダ業 + データ行がそれなりに出力されているのが確認できる。  
 (もちろんこの時点で rspec テストは PASS している)
 
+
+### ActiveRecord での方法の改善
+
+ActiveRecord での方法は SQL での方法よりは遅いとはいえ、もうすこく速くできないか？
+
+まずは 無駄な 列情報を取すないよういすることで、どれくらい佐賀でるかをい計測してみる。
+その前に、便chまrkの rake task にメモリー使用量の計測も組み込んだ。
+
+to_csv は、 csv に出力する列だけを select(:id, :name, :description) として取得するようにした版、  
+to_csv_x は select() 無しの版である。
+
+```bash
+$ rails "benchmark:export_csv[,100000]"
+                   user     system      total        real
+to_csv_x       2.545791   0.104284   2.650075 (  3.044405)
+to_csv         1.998773   0.049652   2.048425 (  2.126698)
+to_csv_by_sql  0.001230   0.000156   0.001386 (  0.173609)
+Calculating -------------------------------------
+            to_csv_x   250.210M memsize (   928.000  retained)
+                         4.058M objects (     1.000  retained)
+                        50.000  strings (     0.000  retained)
+              to_csv   228.220M memsize (     1.074k retained)
+                         3.858M objects (     2.000  retained)
+                        50.000  strings (     1.000  retained)
+       to_csv_by_sql    75.834k memsize (   928.000  retained)
+                       540.000  objects (     1.000  retained)
+                        50.000  strings (     0.000  retained)
+```
+
+select() を行うことで 20 $ の速度アップ、10 % のメモリー使用量削減硬の硬貨があった。  
+
+
+
 現時点の DB は単純なレコードの１つのテーブルである。
 この後は 複数のテーブルを 多対多なのの関連をもたせ、N+1問題を避けた csv 出力鳳凰をサクっていく。
 

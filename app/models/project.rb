@@ -19,6 +19,7 @@ require 'csv'
 class Project < ApplicationRecord
   BOM = "\uFEFF"
   TIME_FORMAT = '%F_%H_%M_%S_%L%Z'
+  CSV_HEADERS = %w[id name description].freeze
 
   validates :name, presence: true, uniqueness: { case_sensitive: true }
 
@@ -32,7 +33,7 @@ class Project < ApplicationRecord
       sql =
         "(SELECT 'id', 'name', 'description') " \
         "UNION " \
-        "(SELECT id, name, description " \
+        "(SELECT #{CSV_HEADERS.join(', ')} " \
         " FROM projects " \
         " ORDER BY id ASC "
       sql += " LIMIT #{opts[:limit]} " if opts[:limit]
@@ -62,9 +63,28 @@ class Project < ApplicationRecord
   # https://qiita.com/Akiyah/items/11edd64beed301f9f485
   # BOM付きCSVファイルを生成する
   def self.to_csv(opts = {})
-    headers = %w[id name description]
     csv_options = {
-      headers: headers, write_headers: true,
+      headers: CSV_HEADERS, write_headers: true,
+      quote_char: '"', force_quotes: true
+    }
+    projects = Project.order(:id)
+    projects = projects.offset(opts[:offset].to_i) if opts[:offset]
+    projects = projects.limit(opts[:limit].to_i) if opts[:limit]
+    projects = projects.select(*CSV_HEADERS)
+
+    File.open(csv_name, 'w:UTF-8') do |file|
+      file.write BOM
+
+      csv = CSV.new(file, **csv_options)
+      projects.order(:id).in_batches.each_record do |row|
+        csv << [row.id, row.name, row.description]
+      end
+    end
+  end
+
+  def self.to_csv_x(opts = {})
+    csv_options = {
+      headers: CSV_HEADERS, write_headers: true,
       quote_char: '"', force_quotes: true
     }
     projects = Project.order(:id)

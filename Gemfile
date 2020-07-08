@@ -43,6 +43,7 @@ group :development, :test do
   gem 'awesome_print'
   gem 'pry-byebug'
   gem 'pry-rails'
+  gem 'benchmark-memory'
 end
 
 group :development do

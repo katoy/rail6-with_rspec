@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'benchmark'
+require 'benchmark/memory'
 
 namespace :benchmark do
   desc "benchmark for csv export, (offset, limit はオプション指定)"
@@ -11,6 +12,9 @@ namespace :benchmark do
     p opts
 
     Benchmark.bm 12 do |r|
+      r.report "to_csv_x" do
+        Project.to_csv_x(opts)
+      end
       r.report "to_csv" do
         Project.to_csv(opts)
       end
@@ -18,6 +22,19 @@ namespace :benchmark do
         Project.to_csv_by_sql(opts)
       end
     end
+
+    Benchmark.memory do |r|
+      r.report "to_csv_x" do
+        Project.to_csv_x(opts)
+      end
+      r.report "to_csv" do
+        Project.to_csv(opts)
+      end
+      r.report "to_csv_by_sql" do
+        Project.to_csv_by_sql(opts)
+      end
+    end
+
     puts "#--- to delete generaed csv, rm csvs/*.csv"
   end
 end
