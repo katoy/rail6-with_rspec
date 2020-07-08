@@ -215,3 +215,71 @@ Loading development environment (Rails 6.0.3.2)
 - <https://qiita.com/taiteam/items/1b1be0578d1dc6e00a17>  
   Rails6.0におけるbulk insert
 
+### csv 出力処理のベンチマーク
+
+つぎのような rake task を作成した。
+
+```bash
+$rails -T bench
+rails benchmark:export_csv[offset,limit]  # benchmark for csv export, (offset, limit はオプション指定)
+```
+
+現在の DB の porjects テーブルに対して。 Project.to_csv, Project.to_csv_by_sql を実行して
+その時間を計測するものである。  
+1000 万件データを作った上で、出力件数を 1万、10万、100 万, 1000万 で実行してみた。
+
+```bash
+$ time rails make_big_db:projects[10000000]
+real	11m45.992s
+user	8m43.408s
+sys	0m4.345s
+
+
+$rails "benchmark:export_csv[,10000]"
+                   user     system      total        real
+to_csv         0.319758   0.047410   0.367168 (  0.450127)
+to_csv_by_sql  0.001729   0.000151   0.001880 (  0.016996)
+
+$rails "benchmark:export_csv[,100000]"
+                   user     system      total        real
+to_csv         2.208512   0.088453   2.296965 (  2.427677)
+to_csv_by_sql  0.001155   0.000187   0.001342 (  0.187950)
+
+$rails "benchmark:export_csv[,1000000]"
+                   user     system      total        real
+to_csv        21.587470   0.620308  22.207778 ( 23.438044)
+to_csv_by_sql  0.001358   0.000265   0.001623 (  2.191858)
+
+y$ rails "benchmark:export_csv[,10000000]"
+{:limit=>10000000}
+                   user     system      total        real
+to_csv       215.787641   5.794337 221.581978 (233.728931)
+to_csv_by_sql  0.001278   0.000442   0.001720 ( 32.317632)
+```
+
+to_csv (ActiveRecord + CSV ライブラリー) での方法の場合、出力件数に比例して、実行時間も増加する。
+
+to_csv_by_sql (SQL 文で CSV を出力) での方法の場合、件数には比例せずほぼ一定の時間で処理される上に、to_csv の100 分の1 (１万件の場合) と圧倒的に速いことがわかる。
+
+念のために出力 csv の行数を確認してみる。
+
+```bash
+$wc -l csvs/*.csv
+   10001 csvs/projects_2020-07-08_12_01_58_290JST.csv
+   10001 csvs/projects_2020-07-08_12_01_58_597JST.csv
+  100001 csvs/projects_2020-07-08_12_02_07_713JST.csv
+  100001 csvs/projects_2020-07-08_12_02_09_998JST.csv
+ 1000001 csvs/projects_2020-07-08_12_02_19_467JST.csv
+ 1000001 csvs/projects_2020-07-08_12_02_42_720JST.csv
+ 10000001 csvs/projects_2020-07-08_12_02_56_531JST.csv
+ 10000001 csvs/projects_2020-07-08_12_06_50_059JST.csv
+```
+
+ヘッダ業 + データ行がそれなりに出力されているのが確認できる。  
+(もちろんこの時点で rspec テストは PASS している)
+
+現時点の DB は単純なレコードの１つのテーブルである。
+この後は 複数のテーブルを 多対多なのの関連をもたせ、N+1問題を避けた csv 出力鳳凰をサクっていく。
+
+
+

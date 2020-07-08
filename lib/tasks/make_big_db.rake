@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 namespace :make_big_db do
-  desc "大量の Pproject の DB をつくる"
+  desc "大量の Pproject の DB をつくる(num; default:10_000)"
   task :projects, [:num] => :environment do |_t, args|
     # system "rails db:drop db:create db:migrate"
     ActiveRecord::Base.connection.execute("TRUNCATE TABLE projects;")
@@ -20,7 +22,7 @@ namespace :make_big_db do
       Project.insert_all! attributes
     end
 
-    if num % 10_000 > 0
+    if (num % 10_000).positive?
       attributes =  (num % 10_000).times.map do |idx|
         id = (num / 10_000) * 10_000 + idx + 1
         {

@@ -17,7 +17,7 @@ RSpec.describe Project, type: :model do
 
   shared_context 'project create projects' do
     let!(:projects) do
-      2.times.map do |idx|
+      3.times.map do |idx|
         create(
           :project,
           id: idx + 1,
@@ -27,9 +27,12 @@ RSpec.describe Project, type: :model do
       end
     end
     let(:expect_lines) do
-      '"id","name","description"' + "\n" \
-      '"1","Project 1","Test project 1."' + "\n" \
-      '"2","Project 2","Test project 2."' + "\n"
+      [
+        '"id","name","description"' + "\n",
+        '"1","Project 1","Test project 1."' + "\n",
+        '"2","Project 2","Test project 2."' + "\n",
+        '"3","Project 3","Test project 3."' + "\n"
+      ]
     end
   end
 
@@ -56,51 +59,69 @@ RSpec.describe Project, type: :model do
   end
 
   context '#to_csv_by_sql' do
-    subject { Project.to_csv_by_sql }
+    subject { Project.to_csv_by_sql(opts) }
     include_context 'project create projects'
 
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:00') }
     include_context 'project time_travel'
     before do
       File.delete(Project.csv_name) if File.exist?(Project.csv_name)
+      subject
     end
 
-    it do
-      subject
-      expect(File.read(Project.csv_name)).to eq expect_lines
+    context "no opts" do
+      let(:opts) { {} }
+      let(:expect_contents) { expect_lines.join("") }
+
+      it { expect(File.read(Project.csv_name)).to eq expect_contents }
+    end
+
+    context "with opts {offset: 1, limit: 2}" do
+      let(:opts) { { offset: 1, limit: 2 } }
+      let(:expect_contents) do
+        expect_lines[0] + expect_lines[2] + expect_lines[3]
+      end
+
+      it { expect(File.read(Project.csv_name)).to eq expect_contents }
     end
   end
 
   context '#to_csv' do
-    subject { Project.to_csv }
+    subject { Project.to_csv(opts) }
     include_context 'project create projects'
-    let(:bomed_expect_lines) { "\uFEFF" + expect_lines }
 
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:01') }
     include_context 'project time_travel'
 
-    context 'check contents with file' do
-      before do
-        File.delete(Project.csv_name) if File.exist?(Project.csv_name)
+    context "with opts {offset: 1, limit: 2}" do
+      let(:opts) { { offset: 1, limit: 2 } }
+      let(:bomed_expect_contents) do
+        "\uFEFF" + expect_lines[0] + expect_lines[2] + expect_lines[3]
       end
 
-      it 'contents of csv file' do
-        subject
-        expect(File.read(Project.csv_name)).to eq bomed_expect_lines
-      end
-    end
+      context 'check contents with file' do
+        before do
+          File.delete(Project.csv_name) if File.exist?(Project.csv_name)
+        end
 
-    context 'check contents without file' do
-      let(:buffer) { StringIO.new }
-      before do
-        allow(File).to receive(:open)
-          .with(Project.csv_name, 'w:UTF-8')
-          .and_yield(buffer)
+        it 'contents of csv file' do
+          subject
+          expect(File.read(Project.csv_name)).to eq bomed_expect_contents
+        end
       end
 
-      it 'contents of csv file' do
-        subject
-        expect(buffer.string).to eq bomed_expect_lines
+      context 'check contents without file' do
+        let(:buffer) { StringIO.new }
+        before do
+          allow(File).to receive(:open)
+            .with(Project.csv_name, 'w:UTF-8')
+            .and_yield(buffer)
+        end
+
+        it 'contents of csv file' do
+          subject
+          expect(buffer.string).to eq bomed_expect_contents
+        end
       end
     end
   end

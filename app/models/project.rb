@@ -11,6 +11,10 @@
 #  created_at  :datetime         not null
 #  updated_at  :datetime         not null
 #
+# Indexes
+#
+#  index_projects_on_name  (name) UNIQUE
+#
 require 'csv'
 class Project < ApplicationRecord
   BOM = "\uFEFF"
@@ -22,7 +26,7 @@ class Project < ApplicationRecord
     "#{Rails.root}/csvs/projects_#{Time.zone.now.strftime(TIME_FORMAT)}.csv"
   end
 
-  def self.to_csv_by_sql
+  def self.to_csv_by_sql(opts = {})
     adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
     if adapter == 'mysql2'
       sql =
@@ -30,12 +34,19 @@ class Project < ApplicationRecord
         "UNION " \
         "(SELECT id, name, description " \
         " FROM projects " \
-        " ORDER BY id ASC) " \
+        " ORDER BY id ASC "
+      sql += " LIMIT #{opts[:limit]} " if opts[:limit]
+      sql += " OFFSET #{opts[:offset]} " if opts[:offset]
+      sql +=
+        ') ' \
         "INTO OUTFILE '#{csv_name}' " \
         "FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';"
-      Project.connection.execute(sql)
+        Project.connection.execute(sql)
     elsif adapter == "sqlite3"
-      sql = 'SELECT id, name, description FROM projects ORDER BY id;'
+      sql = 'SELECT id, name, description FROM projects ORDER BY id'
+      sql += "OFFSET #{opts[:offset]} " if opts[:offset]
+      sql += "LIMIT #{opts[:limit]} " if opts[:limit]
+      sql += ';'
       db_name =
         Rails.configuration.database_configuration[Rails.env]['database']
       cmd = "sqlite3 -cmd '.headers on' -cmd '.mode csv' " \
@@ -50,17 +61,21 @@ class Project < ApplicationRecord
   # See
   # https://qiita.com/Akiyah/items/11edd64beed301f9f485
   # BOM付きCSVファイルを生成する
-  def self.to_csv
+  def self.to_csv(opts = {})
     headers = %w[id name description]
     csv_options = {
       headers: headers, write_headers: true,
       quote_char: '"', force_quotes: true
     }
+    projects = Project.order(:id)
+    projects = projects.offset(opts[:offset].to_i) if opts[:offset]
+    projects = projects.limit(opts[:limit].to_i) if opts[:limit]
+
     File.open(csv_name, 'w:UTF-8') do |file|
       file.write BOM
 
       csv = CSV.new(file, **csv_options)
-      Project.order(:id).in_batches.each_record do |row|
+      projects.order(:id).in_batches.each_record do |row|
         csv << [row.id, row.name, row.description]
       end
     end
