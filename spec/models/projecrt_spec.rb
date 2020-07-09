@@ -36,6 +36,14 @@ RSpec.describe Project, type: :model do
     end
   end
 
+  it "has a valid factory" do
+    expect(build(:project)).to be_valid
+  end
+
+  it { is_expected.to validate_presence_of :name }
+  it { is_expected.to validate_uniqueness_of(:name) }
+  it { is_expected.to have_many(:users).through(:project_user_relations) }
+
   it 'is valid with name' do
     project = Project.new(name: 'Aaron')
     expect(project).to be_valid
@@ -46,6 +54,8 @@ RSpec.describe Project, type: :model do
     project.valid?
     expect(project.errors[:name]).to include("can't be blank")
   end
+
+  it { is_expected.to validate_uniqueness_of(:name) }
 
   context '#csv_name' do
     subject { Project.csv_name }
