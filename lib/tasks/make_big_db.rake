@@ -84,7 +84,7 @@ namespace :db do
       (user_num / 10_000).times do |_k|
         10_000.times.map do |_idx|
           user_id += 1
-          attributes += attr_relations(id, project_num, time)
+          attributes += attr_relations(user_id, project_num, time)
         end
         ProjectUserRelation.insert_all! attributes
       end
