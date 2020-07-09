@@ -12,26 +12,30 @@ namespace :benchmark do
     p opts
 
     Benchmark.bm 12 do |r|
-      r.report "to_csv_x2" do
-        Project.to_csv_x2(opts)
+      r.report "to_csv_by_sql" do
+        Project.to_csv_by_sql(opts)
       end
+      ActiveRecord::Base.connection.query_cache.clear
       r.report "to_csv" do
         Project.to_csv(opts)
       end
-      r.report "to_csv_by_sql" do
-        Project.to_csv_by_sql(opts)
+      ActiveRecord::Base.connection.query_cache.clear
+      r.report "to_csv_x2" do
+        Project.to_csv_x2(opts)
       end
     end
 
     Benchmark.memory do |r|
-      r.report "to_csv_x2" do
-        Project.to_csv_x2(opts)
+      r.report "to_csv_by_sql" do
+        Project.to_csv_by_sql(opts)
       end
+      ActiveRecord::Base.connection.query_cache.clear
       r.report "to_csv" do
         Project.to_csv(opts)
       end
-      r.report "to_csv_by_sql" do
-        Project.to_csv_by_sql(opts)
+      ActiveRecord::Base.connection.query_cache.clear
+      r.report "to_csv_x2" do
+        Project.to_csv_x2(opts)
       end
     end
 

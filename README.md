@@ -237,29 +237,32 @@ sys	0m4.345s
 
 $rails "benchmark:export_csv[,10000]"
                    user     system      total        real
-to_csv         0.319758   0.047410   0.367168 (  0.450127)
-to_csv_by_sql  0.001729   0.000151   0.001880 (  0.016996)
+to_csv_by_sql  0.064206   0.024884   0.089090 (  0.109074)
+to_csv         0.200538   0.011255   0.211793 (  0.220144)
+to_csv_x2      0.227532   0.011135   0.238667 (  0.243704)
 
 $rails "benchmark:export_csv[,100000]"
                    user     system      total        real
-to_csv         2.208512   0.088453   2.296965 (  2.427677)
-to_csv_by_sql  0.001155   0.000187   0.001342 (  0.187950)
+to_csv_by_sql  0.073267   0.034719   0.107986 (  0.295334)
+to_csv         1.910500   0.055642   1.966142 (  2.047811)
+to_csv_x2      1.985303   0.087526   2.072829 (  2.113386)
 
 $rails "benchmark:export_csv[,1000000]"
                    user     system      total        real
-to_csv        21.587470   0.620308  22.207778 ( 23.438044)
-to_csv_by_sql  0.001358   0.000265   0.001623 (  2.191858)
+to_csv_by_sql  0.072509   0.034445   0.106954 (  2.279844)
+to_csv        18.967090   0.464478  19.431568 ( 20.277893)
+to_csv_x2     20.790269   0.882708  21.672977 ( 22.145056)
 
-y$ rails "benchmark:export_csv[,10000000]"
-{:limit=>10000000}
+$rails "benchmark:export_csv[,10000000]"
                    user     system      total        real
-to_csv       215.787641   5.794337 221.581978 (233.728931)
-to_csv_by_sql  0.001278   0.000442   0.001720 ( 32.317632)
+to_csv_by_sql  0.060586   0.022766   0.083352 ( 27.927678)
+to_csv       252.407870   4.769842 257.177712 (265.961546)
+to_csv_x2    621.193280 398.443297 1019.636577 (1276.224578)
 ```
 
-to_csv (ActiveRecord + CSV ライブラリー) での方法の場合、出力件数に比例して、実行時間も増加する。
-
-to_csv_by_sql (SQL 文で CSV を出力) での方法の場合、件数には比例せずほぼ一定の時間で処理される上に、to_csv の100 分の1 (１万件の場合) と圧倒的に速いことがわかる。
+上の出力の real 列をみて比較をする。  
+いずれの方法でも出力件数に比例して、実行時間も増加する。  
+to_csv_by_sql (SQLを使う) は ActiveRecord をつかった方法の 1/10 であり、圧倒的に速い。  
 
 念のために出力 csv の行数を確認してみる。
 
@@ -283,7 +286,7 @@ $wc -l csvs/*.csv
 
 ActiveRecord での方法は SQL での方法よりは遅いとはいえ、もうすこく速くできないか？
 
-まずは 無駄な 列情報を取すないよういすることで、どれくらい佐賀でるかをい計測してみる。
+まずは 無駄な 列情報を取得しないようにすることで、どれくらい差がでるかを計測してみる。
 その前に、便chまrkの rake task にメモリー使用量の計測も組み込んだ。
 
 to_csv は、 csv に出力する列だけを select(:id, :name, :description) として取得するようにした版、  
@@ -292,23 +295,22 @@ to_csv_x は select() 無しの版である。
 ```bash
 $ rails "benchmark:export_csv[,100000]"
                    user     system      total        real
-to_csv_x       2.545791   0.104284   2.650075 (  3.044405)
-to_csv         1.998773   0.049652   2.048425 (  2.126698)
-to_csv_by_sql  0.001230   0.000156   0.001386 (  0.173609)
+to_csv_by_sql  0.063541   0.024184   0.087725 (  0.264029)
+to_csv         1.925162   0.055407   1.980569 (  2.058543)
+to_csv_x2      1.979045   0.086058   2.065103 (  2.102300)
 Calculating -------------------------------------
-            to_csv_x   250.210M memsize (   928.000  retained)
-                         4.058M objects (     1.000  retained)
+       to_csv_by_sql    79.386k memsize (   928.000  retained)
+                       605.000  objects (     1.000  retained)
                         50.000  strings (     0.000  retained)
-              to_csv   228.220M memsize (     1.074k retained)
+              to_csv   228.219M memsize (     1.074k retained)
                          3.858M objects (     2.000  retained)
                         50.000  strings (     1.000  retained)
-       to_csv_by_sql    75.834k memsize (   928.000  retained)
-                       540.000  objects (     1.000  retained)
-                        50.000  strings (     0.000  retained)
+           to_csv_x2   207.242M memsize (     1.074k retained)
+                         3.601M objects (     2.000  retained)
+                        50.000  strings (     1.000  retained)
 ```
 
-select() を行うことで 20 $ の速度アップ、10 % のメモリー使用量削減硬の硬貨があった。  
-
+select() を行うことで 5 % の速度アップ、10 % のメモリー使用量削減硬の効果があった。  
 
 参考情報
 - <https://blog.saeloun.com/2020/04/29/rails-support-descending-order-for-find-each-find-in-batches.html#with-rails-61>
