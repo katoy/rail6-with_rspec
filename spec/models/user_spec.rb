@@ -16,7 +16,7 @@ RSpec.describe User, type: :model do
 
   shared_context 'user create users' do
     let!(:users) do
-      4.times.map do |idx|
+      ret = 4.times.map do |idx|
         create(
           :user,
           id: idx + 1,
@@ -24,6 +24,10 @@ RSpec.describe User, type: :model do
           email: "user_#{idx + 1}@examle.com"
         )
       end
+      ret[1].update!(last_login_at: Time.zone.parse("2020-01-01 08:00:00"))
+      ret[2].update!(last_login_at: Time.zone.parse("2020-01-01 09:00:00"))
+      ret[3].update!(last_login_at: Time.zone.parse("2020-01-01 23:59:59"))
+      ret
     end
 
     let!(:projects) do
@@ -45,14 +49,14 @@ RSpec.describe User, type: :model do
 
     let(:expect_lines) do
       [
-        '"id","name","project_name"' + "\n",
-        '"1","User 1","Project 1"' + "\n",
-        '"1","User 1","Project 2"' + "\n",
-        '"1","User 1","Project 3"' + "\n",
-        '"2","User 2","Project 1"' + "\n",
-        '"2","User 2","Project 3"' + "\n",
-        '"3","User 3","Project 1"' + "\n",
-        '"4","User 4",""' + "\n"
+        '"id","name","last_login_at","project_name"' + "\n",
+        '"1","User 1","","Project 1"' + "\n",
+        '"1","User 1","","Project 2"' + "\n",
+        '"1","User 1","","Project 3"' + "\n",
+        '"2","User 2","2020-01-01 08:00:00","Project 1"' + "\n",
+        '"2","User 2","2020-01-01 08:00:00","Project 3"' + "\n",
+        '"3","User 3","2020-01-01 09:00:00","Project 1"' + "\n",
+        '"4","User 4","2020-01-01 23:59:59",""' + "\n"
       ]
     end
   end

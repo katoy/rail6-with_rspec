@@ -4,11 +4,12 @@
 #
 # Table name: users
 #
-#  id         :bigint           not null, primary key
-#  email      :string(255)      default(""), not null
-#  name       :string(255)      default(""), not null
-#  created_at :datetime         not null
-#  updated_at :datetime         not null
+#  id            :bigint           not null, primary key
+#  email         :string(255)      default(""), not null
+#  last_login_at :datetime
+#  name          :string(255)      default(""), not null
+#  created_at    :datetime         not null
+#  updated_at    :datetime         not null
 #
 # Indexes
 #
@@ -20,7 +21,9 @@ require 'csv'
 class User < ApplicationRecord
   BOM = "\uFEFF"
   TIME_FORMAT = '%F_%H_%M_%S_%L%Z'
-  CSV_HEADERS = %w[id name project_name].freeze
+  CSV_HEADERS = %w[id name last_login_at project_name].freeze
+  CSV_DATETIME_FORMAT = '%F %H:%M:%S'
+  UTC_OFFSET = '+09:00'
 
   validates :email, presence: true, uniqueness: { case_sensitive: false }
   validates :name,  presence: true, uniqueness: { case_sensitive: true }
@@ -43,6 +46,10 @@ class User < ApplicationRecord
       users.id,
       users.name,
       CASE
+        WHEN users.last_login_at IS NULL THEN '' 
+        ELSE convert_tz(users.last_login_at, '+00:00','#{UTC_OFFSET}')
+      END AS last_login_at,
+      CASE
         WHEN projects.name IS NULL THEN '' ELSE projects.name
       END AS project_name
     SQL
@@ -52,7 +59,7 @@ class User < ApplicationRecord
                 .select(select_sql)
                 .order("users.id ASC, projects.id ASC")
     sql = <<-SQL.squish
-      (SELECT 'id', 'name', 'project_name')
+      (SELECT 'id', 'name', 'last_login_at', 'project_name')
       UNION
       (#{users.to_sql})
       INTO OUTFILE '#{csv_name}' 
@@ -67,19 +74,23 @@ class User < ApplicationRecord
       quote_char: '"', force_quotes: true
     }
 
+    select_sql = <<-SQL.squish
+      users.id, users.name, users.last_login_at, projects.name AS project_name
+    SQL
     users = User.readonly.order(:id)
     users = users.offset(opts[:offset].to_i) if opts[:offset]
     users = users.limit(opts[:limit].to_i) if opts[:limit]
     users = User.where(id: users.first.id..users.last.id)
                 .left_joins(:projects)
-                .select("users.id, users.name, projects.name AS project_name")
+                .select(select_sql)
                 .order("users.id ASC, projects.id ASC")
     File.open(csv_name, 'w:UTF-8') do |file|
       file.write BOM
 
       csv = CSV.new(file, **csv_options)
       users.in_batches.each_record do |row|
-        csv << [row.id, row.name, row.project_name]
+        last_login_at = row.last_login_at&.strftime(CSV_DATETIME_FORMAT)
+        csv << [row.id, row.name, last_login_at, row.project_name]
       end
     end
   end
@@ -101,10 +112,13 @@ class User < ApplicationRecord
       csv = CSV.new(file, **csv_options)
       users.in_batches.each_record do |row|
         project_names = row.projects.order(:id).map(&:name)
+        last_login_at = row.last_login_at&.strftime(CSV_DATETIME_FORMAT)
         if !project_names.empty?
-          project_names.each { |p_name| csv << [row.id, row.name, p_name] }
+          project_names.each do |p_name|
+            csv << [row.id, row.name, last_login_at, p_name]
+          end
         else
-          csv << [row.id, row.name, ""]
+          csv << [row.id, row.name, last_login_at, ""]
         end
       end
     end
