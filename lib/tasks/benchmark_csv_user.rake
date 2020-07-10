@@ -13,6 +13,9 @@ namespace :benchmark do
       p opts
 
       Benchmark.bm 12 do |r|
+        r.report "to_csv_by_sql" do
+          User.to_csv_by_sql(opts)
+        end
         ActiveRecord::Base.connection.query_cache.clear
         r.report "to_csv" do
           User.to_csv(opts)
@@ -24,6 +27,9 @@ namespace :benchmark do
       end
 
       Benchmark.memory do |r|
+        r.report "to_csv_by_sql" do
+          User.to_csv_by_sql(opts)
+        end
         ActiveRecord::Base.connection.query_cache.clear
         r.report "to_csv" do
           User.to_csv(opts)

@@ -32,13 +32,42 @@ class User < ApplicationRecord
     "#{Rails.root}/csvs/users_#{Time.zone.now.strftime(TIME_FORMAT)}.csv"
   end
 
+  def self.to_csv_by_sql(opts = {})
+    adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
+    raise "No suport the db dapter: #{adapter}" if adapter != "mysql2"
+
+    users = User.order(:id)
+    users = users.offset(opts[:offset].to_i) if opts[:offset]
+    users = users.limit(opts[:limit].to_i) if opts[:limit]
+    select_sql = <<-SQL.squish
+      users.id,
+      users.name,
+      CASE
+        WHEN projects.name IS NULL THEN '' ELSE projects.name
+      END AS project_name
+    SQL
+    users = User.readonly
+                .where(id: users.first.id..users.last.id)
+                .left_joins(:projects)
+                .select(select_sql)
+                .order("users.id ASC, projects.id ASC")
+    sql = <<-SQL.squish
+      (SELECT 'id', 'name', 'project_name')
+      UNION
+      (#{users.to_sql})
+      INTO OUTFILE '#{csv_name}' 
+      FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
+    SQL
+    User.connection.execute(sql)
+  end
+
   def self.to_csv(opts = {})
     csv_options = {
       headers: CSV_HEADERS, write_headers: true,
       quote_char: '"', force_quotes: true
     }
 
-    users = User.order(:id)
+    users = User.readonly.order(:id)
     users = users.offset(opts[:offset].to_i) if opts[:offset]
     users = users.limit(opts[:limit].to_i) if opts[:limit]
     users = User.where(id: users.first.id..users.last.id)
@@ -55,13 +84,14 @@ class User < ApplicationRecord
     end
   end
 
+  # N+1 問題を含む実装
   def self.to_csv_x(opts = {})
     csv_options = {
       headers: CSV_HEADERS, write_headers: true,
       quote_char: '"', force_quotes: true
     }
 
-    users = User.order(:id)
+    users = User.readonly.order(:id)
     users = users.offset(opts[:offset].to_i) if opts[:offset]
     users = users.limit(opts[:limit].to_i) if opts[:limit]
 

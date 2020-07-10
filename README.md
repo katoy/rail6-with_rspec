@@ -327,7 +327,7 @@ user <--> project が 多対多 の関係を定義した。
 そして、user の csv 出力では、  
 　　user の id, user の名前、 所属している oprojet の名前
 を出力するようにする。  
-ある user が複数の project に 2 つ属していれれば、２行出力される。  
+ある user が複数の project に 2 つ属していれば、２行出力される。  
 
 ２ つに csv 出力を作った。  
 
@@ -342,25 +342,41 @@ sdb:make_big_db[1000000,1000000]
 user csv 出力のベンチマーク結果を示す。
 
 ```bash
-$rails "benchmark:csv:user[0,1000]"
+$rails "benchmark:csv:user[,10000]"
                    user     system      total        real
-to_csv         0.088849   0.016219   0.105068 (  0.119997)
-to_csv_x       0.940145   0.059984   1.000129 (  1.212399)
+to_csv_by_sql  0.156062   0.033529   0.189591 (  0.257232)
+to_csv         0.419291   0.016384   0.435675 (  0.487039)
+to_csv_x       8.639824   0.383725   9.023549 ( 10.847047)
 
-$rails "benchmark:csv:user[0,10000]"
+ rails "benchmark:csv:user[,100000]"
                    user     system      total        real
-to_csv         0.480173   0.030545   0.510718 (  0.576587)
-to_csv_x       9.236448   0.497084   9.733532 ( 11.713744)
+to_csv_by_sql  1.042981   0.095814   1.138795 (  2.175442)
+to_csv         4.490967   0.150985   4.641952 (  5.174015)
+to_csv_x      87.822764   4.218651  92.041415 (111.239626)
 
-$ rails "benchmark:csv:user[0,100000]"
+$rails "benchmark:csv:user[,1000000]"
                    user     system      total        real
-to_csv         4.602364   0.179943   4.782307 (  5.419597)
-to_csv_x      92.804396   4.545250  97.349646 (118.356597)
+to_csv_by_sql 11.334386   0.646910  11.981296 ( 21.293580)
+to_csv        47.643874   1.258733  48.902607 ( 56.264028)
+to_csv_x     833.608000  37.986650 871.594650 (1054.837051)
+Calculating -------------------------------------
+
+$ rails "benchmark:csv:user[,2000000]"
+                   user     system      total        real
+to_csv_by_sql 11.319850   0.597424  11.917274 ( 21.650677)
+to_csv        47.052654   1.210170  48.262824 ( 56.515092)
+to_csv_x     862.790913  38.584010 901.374923 (1093.834346)
 ```
 
-圧倒的な差がある。    
-log をみるとわかるが、 N+1 問題が発生する方法では、user 1 個毎に SQL が発行される。
-N＋1 問題を回避した方法では、SQL 発行発行数は user 1000 個毎に 1回の発行となり、圧倒的に発行回数が少ない。  
+to_csv と to_csv_x では圧倒的な差がある。 
+
+log/development.rb を削除してから, rails "benchmark:csv:user[,100]" を実行してから log を less -R で見てみる。  
+sql を使った方法(to_csv_by_sql) では本質的には SQL は 1 回、  
+N+1 問題を回避した方法 (to_csv) では、1 回、 
+ N+1 問題が発生する方法 (to_csv_x) では、user 1 個毎に SQL が発行される。  
+(N＋1 問題を回避した方法では、SQL 発行発行数は user 1000 個毎に 1回の発行となる)  
+SQL の発行回数が、実行速度の差に現れる。
+また ActiveRecord を使うと、オブジェクト生成処理の時間がかかる分 遅くくなる。  
 
 参考情報
 - <https://qiita.com/k-yamada-github/items/e8dbd6f53c638a930588>  

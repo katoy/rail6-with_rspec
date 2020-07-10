@@ -32,29 +32,17 @@ class Project < ApplicationRecord
 
   def self.to_csv_by_sql(opts = {})
     adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
-    if adapter == 'mysql2'
-      projects = target_ar(opts)
-      sql =
-        "(SELECT 'id', 'name', 'description') " \
-        "UNION " \
-        "(#{projects.to_sql}) " \
-        "INTO OUTFILE '#{csv_name}' " \
-        "FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';"
-      Project.connection.execute(sql)
-    elsif adapter == "sqlite3"
-      sql = 'SELECT id, name, description FROM projects ORDER BY id'
-      sql += "OFFSET #{opts[:offset]} " if opts[:offset]
-      sql += "LIMIT #{opts[:limit]} " if opts[:limit]
-      sql += ';'
-      db_name =
-        Rails.configuration.database_configuration[Rails.env]['database']
-      cmd = "sqlite3 -cmd '.headers on' -cmd '.mode csv' " \
-        "-cmd '.output #{csv_name}' " \
-        "#{db_name} '#{sql}'"
-      system cmd
-    else
-      raise "No suport the db dapter: #{adapter}"
-    end
+    raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
+
+    projects = target_ar(opts)
+    sql = <<-SQL.squish
+      (SELECT 'id', 'name', 'description')
+      UNION
+      (#{projects.to_sql})
+      INTO OUTFILE '#{csv_name}'
+      FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
+    SQL
+    Project.connection.execute(sql)
   end
 
   # See
@@ -114,7 +102,7 @@ class Project < ApplicationRecord
   end
 
   def self.target_ar(opts)
-    projects = opts[:projects] || Project.order(:id)
+    projects = opts[:projects] || Project.readonly.order(:id)
     projects = projects.offset(opts[:offset].to_i) if opts[:offset]
     projects = projects.limit(opts[:limit].to_i) if opts[:limit]
     projects.select(*CSV_HEADERS)
