@@ -55,6 +55,7 @@ group :development do
   gem 'spring-watcher-listen', '~> 2.0.0'
   gem 'spring-commands-rspec'
   gem 'annotate'
+  gem 'progress_bar'
 end
 
 group :test do

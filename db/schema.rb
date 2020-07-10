@@ -17,7 +17,6 @@ ActiveRecord::Schema.define(version: 2020_07_08_075002) do
     t.bigint "user_id", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-    t.index ["project_id", "user_id"], name: "index_project_user_relations_on_project_id_and_user_id"
     t.index ["project_id"], name: "index_project_user_relations_on_project_id"
     t.index ["user_id"], name: "index_project_user_relations_on_user_id"
   end

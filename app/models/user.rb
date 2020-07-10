@@ -38,11 +38,13 @@ class User < ApplicationRecord
       quote_char: '"', force_quotes: true
     }
 
-    users = opts[:projects] || User.order(:id)
+    users = User.order(:id)
     users = users.offset(opts[:offset].to_i) if opts[:offset]
     users = users.limit(opts[:limit].to_i) if opts[:limit]
-    users = users.joins(:projects)
-                 .select("users.id, users.name, projects.name AS project_name")
+    users = User.where(id: users.first.id..users.last.id)
+                .left_joins(:projects)
+                .select("users.id, users.name, projects.name AS project_name")
+                .order("users.id ASC, projects.id ASC")
     File.open(csv_name, 'w:UTF-8') do |file|
       file.write BOM
 
@@ -59,7 +61,7 @@ class User < ApplicationRecord
       quote_char: '"', force_quotes: true
     }
 
-    users = opts[:projects] || User.order(:id)
+    users = User.order(:id)
     users = users.offset(opts[:offset].to_i) if opts[:offset]
     users = users.limit(opts[:limit].to_i) if opts[:limit]
 
@@ -69,7 +71,11 @@ class User < ApplicationRecord
       csv = CSV.new(file, **csv_options)
       users.in_batches.each_record do |row|
         project_names = row.projects.order(:id).map(&:name)
-        project_names.each { |p_name| csv << [row.id, row.name, p_name] }
+        if !project_names.empty?
+          project_names.each { |p_name| csv << [row.id, row.name, p_name] }
+        else
+          csv << [row.id, row.name, ""]
+        end
       end
     end
   end

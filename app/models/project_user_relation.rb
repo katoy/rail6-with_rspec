@@ -10,9 +10,8 @@
 #
 # Indexes
 #
-#  index_project_user_relations_on_project_id              (project_id)
-#  index_project_user_relations_on_project_id_and_user_id  (project_id,user_id)
-#  index_project_user_relations_on_user_id                 (user_id)
+#  index_project_user_relations_on_project_id  (project_id)
+#  index_project_user_relations_on_user_id     (user_id)
 #
 # Foreign Keys
 #

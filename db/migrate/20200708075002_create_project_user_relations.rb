@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateProjectUserRelations < ActiveRecord::Migration[6.0]
   def change
     create_table :project_user_relations do |t|
@@ -7,6 +9,6 @@ class CreateProjectUserRelations < ActiveRecord::Migration[6.0]
       t.timestamps
     end
 
-    add_index :project_user_relations, [:project_id, :user_id]
+    # add_index :project_user_relations, [:project_id, :user_id]
   end
 end

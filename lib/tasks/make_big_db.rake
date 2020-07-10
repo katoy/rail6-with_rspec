@@ -1,5 +1,11 @@
 # frozen_string_literal: true
 
+require 'progress_bar'
+
+class Array
+  include ProgressBar::WithProgress
+end
+
 namespace :db do
   desc "大量の Project の DB をつくる(porject_num, user_num; default:10_000)"
   task :make_big_db, %i[project user] => :environment do |_t, args|
@@ -24,10 +30,10 @@ namespace :db do
     end
 
     def attr_relations(user_id, project_num, time)
-      ret = []
-      return [] if user_id.even?
+      nums = [0, 1, 0, 0, 0, 3, 0, 0, 5, 0]
 
-      (user_id % 10).times do |idx|
+      ret = []
+      nums[user_id % 10].times do |idx|
         ret << {
           user_id: user_id,
           project_id: (user_id + idx) % project_num + 1,
@@ -40,17 +46,18 @@ namespace :db do
     def make_projects(num)
       time = Time.zone.now
       id = 0
-      (num / 10_000).times do |_k|
-        attributes = 10_000.times.map do |_idx|
+      (num / 1000).times.to_a.with_progress do |_k|
+        attributes = 1000.times.map do |_idx|
           id += 1
           attr_project(id, time)
         end
         Project.insert_all! attributes
       end
+      puts("\n")
 
-      return unless (num % 10_000).positive?
+      return unless (num % 1000).positive?
 
-      attributes = (num % 10_000).times.map do |_idx|
+      attributes = (num % 1000).times.map do |_idx|
         id += 1
         attr_project(id, time)
       end
@@ -60,17 +67,18 @@ namespace :db do
     def make_users(num)
       time = Time.zone.now
       id = 0
-      (num / 10_000).times do |_k|
-        attributes = 10_000.times.map do |_idx|
+      (num / 1000).times.to_a.with_progress do |_k|
+        attributes = 1000.times.map do |_idx|
           id += 1
           attr_user(id, time)
         end
         User.insert_all! attributes
       end
+      puts("\n")
 
-      return unless (num % 10_000).positive?
+      return unless (num % 1000).positive?
 
-      attributes = (num % 10_000).times.map do |_idx|
+      attributes = (num % 1000).times.map do |_idx|
         id += 1
         attr_user(id, time)
       end
@@ -80,19 +88,20 @@ namespace :db do
     def make_relations(project_num, user_num)
       time = Time.zone.now
       user_id = 0
-      attributes = []
-      (user_num / 10_000).times do |_k|
-        10_000.times.map do |_idx|
+      (user_num / 1000).times.to_a.with_progress do |_k|
+        attributes = []
+        1000.times.map do |_idx|
           user_id += 1
           attributes += attr_relations(user_id, project_num, time)
         end
         ProjectUserRelation.insert_all! attributes
       end
+      puts("\n")
 
-      return unless (user_num % 10_000).positive?
+      return unless (user_num % 1000).positive?
 
       attributes = []
-      (user_num % 10_000).times.map do |_idx|
+      (user_num % 1000).times.map do |_idx|
         user_id += 1
         attributes += attr_relations(user_id, project_num, time)
       end

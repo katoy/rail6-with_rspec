@@ -339,14 +339,35 @@ sdb:make_big_db[1000000,1000000]
 ```
 として、 user を 100万, project を 100 万件 つくり, 所属 project が　0 , 1, 3, 5 になる user が存在するように「設定した。
 
-csv 出力のベンチマーク結果を示す。
+user csv 出力のベンチマーク結果を示す。
 
 ```bash
+$rails "benchmark:csv:user[0,1000]"
+                   user     system      total        real
+to_csv         0.088849   0.016219   0.105068 (  0.119997)
+to_csv_x       0.940145   0.059984   1.000129 (  1.212399)
 
+$rails "benchmark:csv:user[0,10000]"
+                   user     system      total        real
+to_csv         0.480173   0.030545   0.510718 (  0.576587)
+to_csv_x       9.236448   0.497084   9.733532 ( 11.713744)
+
+$ rails "benchmark:csv:user[0,100000]"
+                   user     system      total        real
+to_csv         4.602364   0.179943   4.782307 (  5.419597)
+to_csv_x      92.804396   4.545250  97.349646 (118.356597)
 ```
-圧倒的な差がある。
-log をみると和ｋラウが、 N+1問題が発生する方法では、SQL が大量に発行される。
-N＋1 問題を回避した方法では、SQL 発行発行数は **** となり、圧倒的に少ない。  
+
+圧倒的な差がある。    
+log をみるとわかるが、 N+1 問題が発生する方法では、user 1 個毎に SQL が発行される。
+N＋1 問題を回避した方法では、SQL 発行発行数は user 1000 個毎に 1回の発行となり、圧倒的に発行回数が少ない。  
+
+参考情報
+- <https://qiita.com/k-yamada-github/items/e8dbd6f53c638a930588>  
+    Railsでmysqlをdump、reset、restoreするRakeタスク
+
+- <https://www.blograils.com/posts/rails-backup>  
+  RailsのDBバックアップ（gem:yaml_db）
 
 
 

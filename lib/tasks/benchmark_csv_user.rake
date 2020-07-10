@@ -5,7 +5,7 @@ require 'benchmark/memory'
 
 namespace :benchmark do
   namespace :csv do
-  desc "benchmark for user csv export, (offset, limit はオプション指定)"
+    desc "benchmark for user csv export, (offset, limit はオプション指定)"
     task :user, %i[offset limit] => :environment do |_t, args|
       opts = {}
       opts[:offset] = args.offset.to_i if args.offset
