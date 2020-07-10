@@ -154,4 +154,43 @@ RSpec.describe Project, type: :model do
       end
     end
   end
+
+  context "#import_x" do
+    subject { Project.import_x(file_path) }
+    let(:file_path) { "filename" }
+    let(:file) do
+      CSV.generate do |csv|
+        rows.each { |row| csv << row }
+      end
+    end
+    before do
+      expect(File).to receive(:open)
+        .with('filename', 'r', { headers: true, universal_newline: false })
+        .and_return(file)
+      subject
+    end
+
+    context "has no dta rows" do
+      let(:rows) { [%w[id name description]] }
+
+      it { expect(Project.count).to eq 0 }
+    end
+
+    context "has 2 data rows" do
+      let(:rows) do
+        [
+          %w[id name description],
+          [1, 'Project_1', 'Test_1'],
+          [2, ' Project_2', 'Test_2']
+        ]
+      end
+
+      it do
+        expect(Project.count).to eq 2
+        expect(
+          Project.order(:id).pluck(:id, :name, :description)
+        ).to eq [rows[1], rows[2]]
+      end
+    end
+  end
 end

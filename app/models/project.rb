@@ -107,4 +107,10 @@ class Project < ApplicationRecord
     projects = projects.limit(opts[:limit].to_i) if opts[:limit]
     projects.select(*CSV_HEADERS)
   end
+
+  def self.import_x(file_path)
+    CSV.foreach(file_path, headers: true) do |row|
+      Project.find_or_create_by(row.to_hash)
+    end
+  end
 end

@@ -385,5 +385,15 @@ SQL の発行回数が、実行速度の差に現れる。
 - <https://www.blograils.com/posts/rails-backup>  
   RailsのDBバックアップ（gem:yaml_db）
 
+### csv の import
 
+参考情報
+- <https://qiita.com/taiteam/items/1b1be0578d1dc6e00a17>  
+  Rails6.0におけるbulk insert
+
+- <https://qiita.com/ham0215/items/d307a242995d440d854f>  
+  Rails6で追加されたinsert_allとimport(とその他)のパフォーマンス検証
+
+- <https://www.dbonline.jp/mysql/function/index48.html>  
+  CONVERT_TZ関数 (指定した日時のタイムゾーンを変更した値を取得する)
 
