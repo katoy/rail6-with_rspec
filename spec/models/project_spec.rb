@@ -22,7 +22,9 @@ RSpec.describe Project, type: :model do
           :project,
           id: idx + 1,
           name: "Project #{idx + 1}",
-          description: "Test project #{idx + 1}."
+          description: "Test project #{idx + 1}.",
+          created_at: the_time,
+          updated_at: the_time
         )
       end
     end
@@ -155,6 +157,35 @@ RSpec.describe Project, type: :model do
     end
   end
 
+  context "#export" do
+    subject { Project.export(file_path, projects) }
+    include_context 'project create projects'
+
+    let!(:the_time) { Time.zone.parse('2020-01-02 08:59:00') }
+    include_context 'project time_travel'
+    let(:expect_lines) do
+      time_stamps = '"2020-01-02 08:59:00.000000","2020-01-02 08:59:00.000000"'
+      [
+        '"id","name","description","due_on","created_at","updated_at"' + "\n",
+        '"1","Project 1","Test project 1.","",' + time_stamps + "\n",
+        '"2","Project 2","Test project 2.","",' + time_stamps + "\n",
+        '"3","Project 3","Test project 3.","",' + time_stamps + "\n"
+      ]
+    end
+    before do
+      File.delete(file_path) if File.exist?(file_path)
+      subject
+    end
+
+    context "no opts" do
+      let(:file_path) { "#{Rails.root}/csvs/export_projects.csv" }
+      let(:recoreds) { nil }
+      let(:expect_contents) { expect_lines.join("") }
+
+      it { expect(File.read(file_path)).to eq expect_contents }
+    end
+  end
+
   context "#import_x" do
     subject { Project.import_x(file_path) }
     let(:file_path) { "filename" }
@@ -179,9 +210,9 @@ RSpec.describe Project, type: :model do
     context "has 2 data rows" do
       let(:rows) do
         [
-          %w[id name description],
+          %w[id name description due_on created_at updated_at],
           [1, 'Project_1', 'Test_1'],
-          [2, ' Project_2', 'Test_2']
+          [2, 'Project_2', 'Test_2']
         ]
       end
 

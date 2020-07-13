@@ -20,6 +20,7 @@ class Project < ApplicationRecord
   BOM = "\uFEFF"
   TIME_FORMAT = '%F_%H_%M_%S_%L%Z'
   CSV_HEADERS = %w[id name description].freeze
+  UTC_OFFSET = '+09:00'
 
   validates :name, presence: true, uniqueness: { case_sensitive: true }
 
@@ -106,6 +107,36 @@ class Project < ApplicationRecord
     projects = projects.offset(opts[:offset].to_i) if opts[:offset]
     projects = projects.limit(opts[:limit].to_i) if opts[:limit]
     projects.select(*CSV_HEADERS)
+  end
+
+  def self.export(file_path, projects = nil)
+    adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
+    raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
+
+    projects = projects || Project.order(:id).all
+    select_sql =
+      Project.columns.map { |x| ["#{x.name}", x.type] }.map do |col|
+        if col[1] == :datetime
+          "CASE" \
+          "  WHEN projects.#{col[0]} IS NULL THEN ''" \
+          "  ELSE convert_tz(projects.#{col[0]}, '+00:00','#{UTC_OFFSET}') " \
+          "END AS #{col[0]}"
+        else
+          "CASE" \
+          "  WHEN projects.#{col[0]} IS NULL THEN ''" \
+          "  ELSE projects.#{col[0]} " \
+          "END AS #{col[0]}"
+        end
+      end.join(',')
+
+    sql = <<-SQL.squish
+      (SELECT '#{Project.column_names.join('\',\'')}')
+      UNION
+      (SELECT #{select_sql} FROM projects)
+      INTO OUTFILE '#{file_path}'
+      FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
+    SQL
+    Project.connection.execute(sql)
   end
 
   def self.import_x(file_path)

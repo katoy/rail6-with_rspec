@@ -397,3 +397,11 @@ SQL の発行回数が、実行速度の差に現れる。
 - <https://www.dbonline.jp/mysql/function/index48.html>  
   CONVERT_TZ関数 (指定した日時のタイムゾーンを変更した値を取得する)
 
+- <https://github.com/sogilis/csv_fast_importer>
+  CSV Fast Importer
+
+- <https://blog.saeloun.com/2019/11/26/rails-6-insert-all.html>
+  Rails 6 bulk insert records
+
+
+
