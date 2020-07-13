@@ -329,7 +329,7 @@ user <--> project が 多対多 の関係を定義した。
 を出力するようにする。  
 ある user が複数の project に 2 つ属していれば、２行出力される。  
 
-２ つに csv 出力を作った。  
+２ つの csv 出力を作った。  
 
 to_csv_x はいわゆる N+１ 問題が発生する方法である。  
 もう一つはそれを回避した方法である。
@@ -404,4 +404,26 @@ SQL の発行回数が、実行速度の差に現れる。
   Rails 6 bulk insert records
 
 
+### ER 図を chemaspy で作る
 
+```bash
+$cd schemaspy
+$run.sh
+```
+で ER 図作成をできるようにした。
+
+![ER](schemaspy/er.png)
+
+参考情報
+- <https://qiita.com/omokawa_yasu/items/f0571094d5856bbe314e>
+  SchemaSpyを使って、RedmineのER図作成を自動化する
+
+- <https://qiita.com/miua/items/14ec9d03a2d6e56af4e4>
+  転職してデータ構造を把握するためにやったこととツール
+
+- <https://qiita.com/maika_kamada/items/c23c2a3717168c3b8e7a>
+  【SchemaSpy】手間をかけずにRDS(MySQL)からER図を生成したい
+
+  ### import 処理のベンチマーク
+
+  
