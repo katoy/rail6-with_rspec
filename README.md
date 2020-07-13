@@ -426,4 +426,33 @@ $run.sh
 
   ### import 処理のベンチマーク
 
-  
+#### csv ファイルの作成
+
+```bash
+$rails 'db:make_big_csv[10000]' > csvs/10000.csv
+$rails "benchmark:import:project[csvs/1000.csv]"
+```
+
+上では、 1000 レコード分 project の csv を作成し、 import 処理のベンチマーク測地をしている。  
+(csv は gzip して保存しておき、benchmrk ときに gunzip してつかうようにすると良い。  
+1千万件 csv は 1GB 程度になるが、gzip すると 80MB 程度になる)  
+
+```bash
+$ rails "benchmark:import:project[csvs/1000.csv]"
+import_x       3.690726   0.225623   3.916349 (  4.306344)
+Calculating -------------------------------------
+            import_x   396.744M memsize (     1.328k retained)
+                         3.492M objects (     6.000  retained)
+                        50.000  strings (     0.000  retained)
+
+$rails "benchmark:import:project[csvs/10000.csv]"
+                   user     system      total        real
+import_x      36.772411   1.828457  38.600868 ( 42.807457)
+Calculating -------------------------------------
+            import_x     3.968B memsize (     1.328k retained)
+                        34.921M objects (     6.000  retained)
+                        50.000  strings (     0.000  retained)
+```
+
+
+
