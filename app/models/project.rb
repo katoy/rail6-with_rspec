@@ -139,6 +139,18 @@ class Project < ApplicationRecord
     Project.connection.execute(sql)
   end
 
+  def self.import_by_sql(file_path)
+    adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
+    raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
+
+    sql = <<-SQL.squish
+      LOAD DATA LOCAL INFILE '#{file_path}'
+      INTO TABLE projects
+      FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES;
+    SQL
+    Project.connection.execute(sql)
+  end
+
   def self.import_x(file_path)
     CSV.foreach(file_path, headers: true) do |row|
       Project.find_or_create_by(row.to_hash)

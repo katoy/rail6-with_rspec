@@ -439,20 +439,37 @@ $rails "benchmark:import:project[csvs/1000.csv]"
 
 ```bash
 $ rails "benchmark:import:project[csvs/1000.csv]"
-import_x       3.690726   0.225623   3.916349 (  4.306344)
+                   user     system      total        real
+import_by_sql  0.021393   0.008849   0.030242 (  0.061050)
+import_x       3.669132   0.195290   3.864422 (  4.292960)
 Calculating -------------------------------------
+       import_by_sql    74.121k memsize (     7.785k retained)
+                       525.000  objects (    80.000  retained)
+                        50.000  strings (    22.000  retained)
             import_x   396.744M memsize (     1.328k retained)
                          3.492M objects (     6.000  retained)
                         50.000  strings (     0.000  retained)
 
 $rails "benchmark:import:project[csvs/10000.csv]"
                    user     system      total        real
-import_x      36.772411   1.828457  38.600868 ( 42.807457)
+import_by_sql  0.025093   0.011852   0.036945 (  0.099341)
+import_x      36.678937   1.753287  38.432224 ( 42.686932)
 Calculating -------------------------------------
+       import_by_sql    74.131k memsize (     7.785k retained)
+                       525.000  objects (    80.000  retained)
+                        50.000  strings (    22.000  retained)
             import_x     3.968B memsize (     1.328k retained)
                         34.921M objects (     6.000  retained)
                         50.000  strings (     0.000  retained)
 ```
 
+SQL での import が最善とおもわれうが、ActiveRecord での imort 実装で
+どこまではやくできるかを試みる。
 
 
+参考情報
+- <https://mita2db.hateblo.jp/entry/2020/01/13/163218>  
+  MySQL 8.0 の LOAD DATA で The used command is not allowed with this MySQL version エラー
+
+- <https://www.virment.com/sql-for-import-csv-mysql/>  
+  CSVファイルをMySQLにインポートするSQL文

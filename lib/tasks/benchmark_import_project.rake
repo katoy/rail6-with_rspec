@@ -11,12 +11,21 @@ namespace :benchmark do
 
       Benchmark.bm 12 do |r|
         ActiveRecord::Base.connection.query_cache.clear
+        r.report "import_by_sql" do
+          Project.import_by_sql(file)
+        end
+
+        ActiveRecord::Base.connection.query_cache.clear
         r.report "import_x" do
           Project.import_x(file)
         end
       end
 
       Benchmark.memory do |r|
+        ActiveRecord::Base.connection.query_cache.clear
+        r.report "import_by_sql" do
+          Project.import_by_sql(file)
+        end
         ActiveRecord::Base.connection.query_cache.clear
         r.report "import_x" do
           Project.import_x(file)
