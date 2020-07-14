@@ -151,6 +151,34 @@ class Project < ApplicationRecord
     Project.connection.execute(sql)
   end
 
+  def self.import(file_path)
+    the_time = Time.zone.now
+    rows = []
+    CSV.foreach(file_path, headers: true) do |row|
+      row_hash = row.to_hash
+      row_hash[:created_at] = 
+        if row_hash['created_at']  
+          Time.zone.parse(row_hash['created_at'])
+        else
+          the_time
+        end
+      row_hash[:updated_at] =
+        if row_hash['updated_at']
+          Time.zone.parse(row_hash['updated_at'])
+        else
+          the_time
+        end
+
+        rows << row_hash
+      if rows.size > 1000
+        # Project.upsert_all(rows)
+        Project.insert_all(rows)
+        rows = []
+      end
+    end
+    Project.insert_all(rows) if rows.size.positive?
+  end
+
   def self.import_x(file_path)
     CSV.foreach(file_path, headers: true) do |row|
       Project.find_or_create_by(row.to_hash)

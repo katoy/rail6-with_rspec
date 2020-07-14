@@ -16,9 +16,14 @@ namespace :benchmark do
         end
 
         ActiveRecord::Base.connection.query_cache.clear
-        r.report "import_x" do
-          Project.import_x(file)
+        r.report "import" do
+          Project.import(file)
         end
+
+        # ActiveRecord::Base.connection.query_cache.clear
+        # r.report "import_x" do
+        #   Project.import_x(file)
+        # end
       end
 
       Benchmark.memory do |r|
@@ -26,10 +31,16 @@ namespace :benchmark do
         r.report "import_by_sql" do
           Project.import_by_sql(file)
         end
+
         ActiveRecord::Base.connection.query_cache.clear
-        r.report "import_x" do
-          Project.import_x(file)
+        r.report "import" do
+          Project.import(file)
         end
+
+        # ActiveRecord::Base.connection.query_cache.clear
+        # r.report "import_x" do
+        #   Project.import_x(file)
+        # end
       end
 
       puts "Project.count: #{Project.count}"

@@ -473,3 +473,66 @@ SQL での import が最善とおもわれうが、ActiveRecord での imort 実
 
 - <https://www.virment.com/sql-for-import-csv-mysql/>  
   CSVファイルをMySQLにインポートするSQL文
+
+```bash
+$rails "benchmark:import:project[csvs/1000.csv]"
+                   user     system      total        real
+import_by_sql  0.021524   0.007325   0.028849 (  0.043520)
+import         0.153107   0.005868   0.158975 (  0.174242)
+import_x       3.807392   0.185518   3.992910 (  4.760382)
+Calculating -------------------------------------
+       import_by_sql    74.121k memsize (     7.785k retained)
+                       525.000  objects (    80.000  retained)
+                        50.000  strings (    22.000  retained)
+              import    12.196M memsize (   928.000  retained)
+                       173.547k objects (     1.000  retained)
+                        50.000  strings (     0.000  retained)
+            import_x   396.744M memsize (     1.328k retained)
+                         3.492M objects (     6.000  retained)
+                        50.000  strings (     0.000  retained)
+
+$rails "benchmark:import:project[csvs/10000.csv]"
+                   user     system      total        real
+import_by_sql  0.023748   0.009005   0.032753 (  0.078785)
+import         1.611789   0.018821   1.630610 (  1.700300)
+Calculating -------------------------------------
+       import_by_sql    74.131k memsize (     7.785k retained)
+                       525.000  objects (    80.000  retained)
+                        50.000  strings (    22.000  retained)
+              import   122.105M memsize (   928.000  retained)
+                         1.735M objects (     1.000  retained)
+                        50.000  strings (     0.000  retained)
+
+$rails "benchmark:import:project[csvs/100000.csv]"
+                   user     system      total        real
+import_by_sql  0.023347   0.019283   0.042630 (  0.447418)
+import        16.051898   0.115132  16.167030 ( 16.924975)
+Calculating -------------------------------------
+       import_by_sql    74.141k memsize (     7.785k retained)
+                       525.000  objects (    80.000  retained)
+                        50.000  strings (    22.000  retained)
+              import     1.224B memsize (   928.000  retained)
+                        17.348M objects (     1.000  retained)
+                        50.000  strings (     0.000  retained)
+
+$ rails "benchmark:import:project[csvs/1000000.csv]"
+                   user     system      total        real
+import_by_sql  0.058255   0.189392   0.247647 (  7.913152)
+import       212.917070   2.977851 215.894921 (231.784081)
+Calculating -------------------------------------
+       import_by_sql    74.439k memsize (     7.785k retained)
+                       531.000  objects (    80.000  retained)
+                        50.000  strings (    22.000  retained)
+Killed: 9
+
+$ rails "benchmark:import:project[csvs/10000000.csv]"
+                   user     system      total        real
+import_by_sql  0.480541   1.888971   2.369512 (158.525352)
+
+```
+
+1千万件の import は SQL での実装では 2分半, ActiverRecord での実装は １時間程度とおもわれる。
+Activerecode での単純実装 (import_x) の場合は 1万件で 40 秒たったのに対し、
+すこし工夫した ActiveRecord 実装 (import) では １万件で 1.7 秒であった。
+
+

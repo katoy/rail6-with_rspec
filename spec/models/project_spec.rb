@@ -218,6 +218,75 @@ RSpec.describe Project, type: :model do
     end
   end
 
+  context "#import" do
+    subject { Project.import(file_path) }
+    let(:file_path) { "filename" }
+
+    context "with real file" do
+      let(:file_path) { "spec/fixtures/export_projects.csv" }
+      let(:expect_attrs) do
+        time_stamp = Time.zone.parse("2020-01-02 08:59:00")
+        [
+          { id: 1, name: "Project 1", due_on: nil,
+            description: "テスト 1",
+            created_at: time_stamp, updated_at: time_stamp},
+          { id: 2, name: "Project 2", due_on: nil,
+            description: 'テスト 2 “暫定”',
+            created_at: time_stamp, updated_at: time_stamp},
+          { id: 3, name: "Project 3", due_on: nil,
+            description: "テスト 3\n(暫定)",
+            created_at: time_stamp, updated_at: time_stamp}
+        ]
+      end
+      before do
+        Project.destroy_all
+        subject
+      end
+
+      it do
+        expect(Project.order(:id).map { |x| x.attributes.symbolize_keys })
+          .to eq expect_attrs
+      end
+    end
+
+    context "without real file" do
+      let(:file) do
+        CSV.generate do |csv|
+          rows.each { |row| csv << row }
+        end
+      end
+      before do
+        expect(File).to receive(:open)
+          .with('filename', 'r', { headers: true, universal_newline: false })
+          .and_return(file)
+        subject
+      end
+
+      context "has no data rows" do
+        let(:rows) { [%w[id name description]] }
+
+        it { expect(Project.count).to eq 0 }
+      end
+
+      context "has 2 data rows" do
+        let(:rows) do
+          [
+            %w[id name description due_on created_at updated_at],
+            [1, 'Project_1', 'Test_1'],
+            [2, 'Project_2', 'Test_2']
+          ]
+        end
+
+        it do
+          expect(Project.count).to eq 2
+          expect(
+            Project.order(:id).pluck(:id, :name, :description)
+          ).to eq [rows[1], rows[2]]
+        end
+      end
+    end
+  end
+
   context "#import_x" do
     subject { Project.import_x(file_path) }
     let(:file_path) { "filename" }
