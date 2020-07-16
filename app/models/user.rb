@@ -62,9 +62,10 @@ class User < ApplicationRecord
       (SELECT 'id', 'name', 'last_login_at', 'project_name')
       UNION
       (#{users.to_sql})
-      INTO OUTFILE '#{csv_name}' 
+      INTO OUTFILE ?
       FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
     SQL
+    sql = User.sanitize_sql([sql, csv_name])
     User.connection.execute(sql)
   end
 

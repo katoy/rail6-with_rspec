@@ -40,9 +40,10 @@ class Project < ApplicationRecord
       (SELECT 'id', 'name', 'description')
       UNION
       (#{projects.to_sql})
-      INTO OUTFILE '#{csv_name}'
+      INTO OUTFILE ?
       FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
     SQL
+    sql = Project.sanitize_sql([sql, csv_name])
     Project.connection.execute(sql)
   end
 
@@ -113,9 +114,9 @@ class Project < ApplicationRecord
     adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
     raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
 
-    projects = projects || Project.order(:id).all
+    projects ||= Project.order(:id).all
     select_sql =
-      Project.columns.map { |x| ["#{x.name}", x.type] }.map do |col|
+      Project.columns.map { |x| [x.name.to_s, x.type] }.map do |col|
         if col[1] == :datetime
           "CASE" \
           "  WHEN projects.#{col[0]} IS NULL THEN ''" \
@@ -133,9 +134,10 @@ class Project < ApplicationRecord
       (SELECT '#{Project.column_names.join('\',\'')}')
       UNION
       (SELECT #{select_sql} FROM projects)
-      INTO OUTFILE '#{file_path}'
+      INTO OUTFILE ?
       FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
     SQL
+    sql = Project.sanitize_sql([sql, file_path])
     Project.connection.execute(sql)
   end
 
@@ -144,10 +146,11 @@ class Project < ApplicationRecord
     raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
 
     sql = <<-SQL.squish
-      LOAD DATA LOCAL INFILE '#{file_path}'
+      LOAD DATA LOCAL INFILE ?
       INTO TABLE projects
       FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES;
     SQL
+    sql = Project.sanitize_sql([sql, file_path])
     Project.connection.execute(sql)
   end
 
@@ -156,8 +159,8 @@ class Project < ApplicationRecord
     rows = []
     CSV.foreach(file_path, headers: true) do |row|
       row_hash = row.to_hash
-      row_hash[:created_at] = 
-        if row_hash['created_at']  
+      row_hash[:created_at] =
+        if row_hash['created_at']
           Time.zone.parse(row_hash['created_at'])
         else
           the_time
@@ -169,7 +172,7 @@ class Project < ApplicationRecord
           the_time
         end
 
-        rows << row_hash
+      rows << row_hash
       if rows.size > 1000
         # Project.upsert_all(rows)
         Project.insert_all(rows)

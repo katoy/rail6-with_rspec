@@ -56,6 +56,7 @@ group :development do
   gem 'spring-commands-rspec'
   gem 'annotate'
   gem 'progress_bar'
+  gem 'brakeman', require: false
 end
 
 group :test do
