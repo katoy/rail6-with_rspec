@@ -65,14 +65,14 @@ product モデルに to_csv_by_sql() と to_csv() メソッドを作った。
 to_csv_by_sql() は SQL 文で csv 出力してしまうものです。  
 to_csv() は ActiveRecord::Relation を in_batch で回して CSV ファイルに書き込んでいくというものです。  
 
-メモリ上の変数や ActoveRecord で取得した レコード内容は eq などで値をチェックして行くことができます。  
+メモリ上の変数や ActoveRecord で取得した レコード内容は eq などで値をチェックしていくことができます。  
 外部ファイル出力結果をどうやって rspec でテストするかをここで示します。  
 
 ### ファイル出力内容のテスト
 
 projects テーブルの内容を ctiverEcord や CSV クラスをつかって次のように実装しているメソッドがあります。
 
-```
+```ruby
   def self.to_csv
     headers = %w[id name description]
     File.open(csv_name, 'w:UTF-8') do |file|
@@ -88,15 +88,15 @@ projects テーブルの内容を ctiverEcord や CSV クラスをつかって�
 
 このメソッドが生成するファイル内容をチェックするテストを２つ書きました。  
 1 つは、 File を一括読み込みしてその内容をチェックするものです。  
-もう一つは、File への書き込処理を mock にして メモリー上にファイル内容を保持するようにして、そお内容をチェックするものです。  
+もう一つは、File への書き込処理を mock にして メモリー上にファイル内容を保持するようにして、その内容をチェックするものです。  
 
 ファイルを実際に読み混んで内容をチェックするには次のようにします。
-```
+```ruby
 expect(File.read(Project.csv_name)).to eq expect_lines
 ```
 
 ファイルへ書き込まず、メモリー上へ書き込むようにするには次のようにします。
-```
+```ruby
       before do
         allow(File).to receive(:open)
           .with(Project.csv_name, 'w:UTF-8')
@@ -104,10 +104,10 @@ expect(File.read(Project.csv_name)).to eq expect_lines
       end
 ```
 ファイル名 "Project.csv_name" への書き込みは、ファイルでなく
-let(:buffer) { StringIO.new } へ書き込まえることになります。  
+let(:buffer) { StringIO.new } へ書き込むことになります。  
 
 buffer へ書き込まれた内容のチェックは,次のように行います。
-```
+```ruby
       it 'contents of csv file' do
         subject
         expect(buffer.string).to eq expect_lines
@@ -117,6 +117,7 @@ buffer へ書き込まれた内容のチェックは,次のように行います
 
 
 参考情報
+
 - <https://github.com/samg/diffy>  
    Diffy - Easy Diffing With Ruby
 
@@ -126,11 +127,12 @@ buffer へ書き込まれた内容のチェックは,次のように行います
 ## 時間の操作
 
 to_csv() メソッドで生成する csv ファイル名には、実機日時が埋め込まれるようになっています。  
-テスト実機の度に日時は変化します。そのようなものをテストするんは大変です。  
-実行日時を任意の日時に設定したら、時間を止めてしまう応報があります。  
+テスト実機の度に日時は変化します。そのようなものをテストするのは大変です。  
+実行日時を任意の日時に設定したら、時間を止めてしまう方法があります。  
 これを利用すると、出力ファイル名を一定にすることができます。
 
 参考情報
+
 - <https://www.ryotaku.com/entry/2019/08/27/000000>  
   現在日時をズラしたテストが実行できる「TimeHelpers（travel・travel_back・travel_to）」
 
@@ -148,12 +150,14 @@ csv ファイルには、 record id が含まれています。
 primary_key リセットはあきらめて、テスト時の expected の値の id を DB 情報から取得する様に変更した。
 
 参考情報
+
 - <https://medium.com/@tiffanytang_30644/how-to-reset-your-activerecord-postgresql-and-sqlite-id-sequences-with-a-simple-ruby-gem-15b90c6fbdac>  
   How to Reset Your ActiveRecord PostgreSQL and SQLite ID Sequences with a Simple Ruby Gem
 
 ### Mysql について
 
 参考情報
+
 - <https://weblabo.oscasierra.net/mysql-select-into-outfile/>  
   MySQLのSELECT結果をCSVファイルで出力する方法
 
@@ -176,20 +180,20 @@ my.ini の編集が必要になる。
 大容量データを SQL 出力する際の実装によるパフォーマンス比較をしていく。
 ますは、大量データを作成する rkae task に作成をする。  
 そして、そのデータを使って csv 出力の速度・メモリー量などを計測するテストを作る。  
-(実際の DB では複数のテーブルが関連して N+1 問題が発声したりする。  
+(実際の DB では複数のテーブルが関連して N+1 問題が発生したりする。  
 こっこでは、まずは 1 テーブルの出力において、実装の差がパフォーマンスに与える影響を示していく)
 
 - 100万件データ作成をする rake task 
 
-insert_all! をつかって 10000  レコードずつ SQL 発行している （百万件なら 100 回の SQL)
+insert_all! をつかって 1000  レコードずつ SQL 発行している （百万件なら 1000 回の SQL)
 
 ```bash
 $time rake "make_big_db:projects[1000000]"
 #-- created 1000000 recoreds.
 
-real	1m5.553s
-user	0m54.452s
-sys	0m1.402s
+real  1m5.553s
+user  0m54.452s
+sys   0m1.402s
 ```
 
 ```bash
@@ -210,8 +214,8 @@ Loading development environment (Rails 6.0.3.2)
  updated_at: Tue, 07 Jul 2020 17:36:20 JST +09:00>
 ```
 
-
 参考情報
+
 - <https://qiita.com/taiteam/items/1b1be0578d1dc6e00a17>  
   Rails6.0におけるbulk insert
 
@@ -287,7 +291,7 @@ $wc -l csvs/*.csv
 ActiveRecord での方法は SQL での方法よりは遅いとはいえ、もうすこく速くできないか？
 
 まずは 無駄な 列情報を取得しないようにすることで、どれくらい差がでるかを計測してみる。
-その前に、便chまrkの rake task にメモリー使用量の計測も組み込んだ。
+その前に rake task にメモリー使用量の計測も組み込んだ。
 
 to_csv は、 csv に出力する列だけを select(:id, :name, :description) として取得するようにした版、  
 to_csv_x は select() 無しの版である。
@@ -313,6 +317,7 @@ Calculating -------------------------------------
 select() を行うことで 5 % の速度アップ、10 % のメモリー使用量削減硬の効果があった。  
 
 参考情報
+
 - <https://blog.saeloun.com/2020/04/29/rails-support-descending-order-for-find-each-find-in-batches.html#with-rails-61>
   Rails 6.1 now supports order option for find_each, find_in_batches and in_batches methods.
 
@@ -337,7 +342,7 @@ to_csv_x はいわゆる N+１ 問題が発生する方法である。
 ```bash
 sdb:make_big_db[1000000,1000000]
 ```
-として、 user を 100万, project を 100 万件 つくり, 所属 project が　0 , 1, 3, 5 になる user が存在するように「設定した。
+として、 user を 100万, project を 100 万件 つくり, 所属 project が　0 , 1, 3, 5 になる user が存在するように設定した。
 
 user csv 出力のベンチマーク結果を示す。
 
@@ -368,17 +373,18 @@ to_csv        47.052654   1.210170  48.262824 ( 56.515092)
 to_csv_x     862.790913  38.584010 901.374923 (1093.834346)
 ```
 
-to_csv と to_csv_x では圧倒的な差がある。 
+to_csv と to_csv_x では圧倒的な差がある。  
 
 log/development.rb を削除してから, rails "benchmark:csv:user[,100]" を実行してから log を less -R で見てみる。  
 sql を使った方法(to_csv_by_sql) では本質的には SQL は 1 回、  
-N+1 問題を回避した方法 (to_csv) では、1 回、 
+N+1 問題を回避した方法 (to_csv) では、1 回、  
  N+1 問題が発生する方法 (to_csv_x) では、user 1 個毎に SQL が発行される。  
 (N＋1 問題を回避した方法では、SQL 発行発行数は user 1000 個毎に 1回の発行となる)  
 SQL の発行回数が、実行速度の差に現れる。
-また ActiveRecord を使うと、オブジェクト生成処理の時間がかかる分 遅くくなる。  
+また ActiveRecord を使うと、オブジェクト生成処理の時間がかかる分 遅くなる。  
 
 参考情報
+
 - <https://qiita.com/k-yamada-github/items/e8dbd6f53c638a930588>  
     Railsでmysqlをdump、reset、restoreするRakeタスク
 
@@ -388,6 +394,7 @@ SQL の発行回数が、実行速度の差に現れる。
 ### csv の import
 
 参考情報
+
 - <https://qiita.com/taiteam/items/1b1be0578d1dc6e00a17>  
   Rails6.0におけるbulk insert
 
@@ -403,18 +410,19 @@ SQL の発行回数が、実行速度の差に現れる。
 - <https://blog.saeloun.com/2019/11/26/rails-6-insert-all.html>
   Rails 6 bulk insert records
 
-
 ### ER 図を chemaspy で作る
 
 ```bash
 $cd schemaspy
 $run.sh
 ```
+
 で ER 図作成をできるようにした。
 
 ![ER](schemaspy/er.png)
 
 参考情報
+
 - <https://qiita.com/omokawa_yasu/items/f0571094d5856bbe314e>
   SchemaSpyを使って、RedmineのER図作成を自動化する
 
@@ -424,7 +432,7 @@ $run.sh
 - <https://qiita.com/maika_kamada/items/c23c2a3717168c3b8e7a>
   【SchemaSpy】手間をかけずにRDS(MySQL)からER図を生成したい
 
-  ### import 処理のベンチマーク
+### import 処理のベンチマーク
 
 #### csv ファイルの作成
 
@@ -433,8 +441,8 @@ $rails 'db:make_big_csv[10000]' > csvs/10000.csv
 $rails "benchmark:import:project[csvs/1000.csv]"
 ```
 
-上では、 1000 レコード分 project の csv を作成し、 import 処理のベンチマーク測地をしている。  
-(csv は gzip して保存しておき、benchmrk ときに gunzip してつかうようにすると良い。  
+上では、 1000 レコード分 project の csv を作成し、 import 処理のベンチマーク測定をしている。  
+(csv は gzip して保存しておき、benchmark ときに gunzip してつかうようにすると良い。  
 1千万件 csv は 1GB 程度になるが、gzip すると 80MB 程度になる)  
 
 ```bash
@@ -466,8 +474,8 @@ Calculating -------------------------------------
 SQL での import が最善とおもわれうが、ActiveRecord での imort 実装で
 どこまではやくできるかを試みる。
 
-
 参考情報
+
 - <https://mita2db.hateblo.jp/entry/2020/01/13/163218>  
   MySQL 8.0 の LOAD DATA で The used command is not allowed with this MySQL version エラー
 
@@ -528,11 +536,8 @@ Killed: 9
 $ rails "benchmark:import:project[csvs/10000000.csv]"
                    user     system      total        real
 import_by_sql  0.480541   1.888971   2.369512 (158.525352)
-
 ```
 
 1千万件の import は SQL での実装では 2分半, ActiverRecord での実装は １時間程度とおもわれる。
-Activerecode での単純実装 (import_x) の場合は 1万件で 40 秒たったのに対し、
+Activerecode での単純実装 (import_x) の場合は 1万件で 40 秒なのに対し、
 すこし工夫した ActiveRecord 実装 (import) では １万件で 1.7 秒であった。
-
-

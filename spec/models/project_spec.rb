@@ -192,18 +192,18 @@ RSpec.describe Project, type: :model do
     context "with real file" do
       let(:file_path) { "spec/fixtures/export_projects.csv" }
       let(:expect_attrs) do
-        # csv の値 + 9:00 が DB に設定される (CSV 派JST, DB は UTCの為) 
+        # csv の値 + 9:00 が DB に設定される (CSV は JST, DB は UTCの為)
         time_stamp = Time.zone.parse("2020-01-02 17:59:00")
         [
           { id: 1, name: "Project 1", due_on: nil,
             description: "テスト 1",
-            created_at: time_stamp, updated_at: time_stamp},
+            created_at: time_stamp, updated_at: time_stamp },
           { id: 2, name: "Project 2", due_on: nil,
             description: 'テスト 2 “暫定”',
-            created_at: time_stamp, updated_at: time_stamp},
+            created_at: time_stamp, updated_at: time_stamp },
           { id: 3, name: "Project 3", due_on: nil,
             description: "テスト 3\n(暫定)",
-            created_at: time_stamp, updated_at: time_stamp}
+            created_at: time_stamp, updated_at: time_stamp }
         ]
       end
       before do
@@ -229,13 +229,13 @@ RSpec.describe Project, type: :model do
         [
           { id: 1, name: "Project 1", due_on: nil,
             description: "テスト 1",
-            created_at: time_stamp, updated_at: time_stamp},
+            created_at: time_stamp, updated_at: time_stamp },
           { id: 2, name: "Project 2", due_on: nil,
             description: 'テスト 2 “暫定”',
-            created_at: time_stamp, updated_at: time_stamp},
+            created_at: time_stamp, updated_at: time_stamp },
           { id: 3, name: "Project 3", due_on: nil,
             description: "テスト 3\n(暫定)",
-            created_at: time_stamp, updated_at: time_stamp}
+            created_at: time_stamp, updated_at: time_stamp }
         ]
       end
       before do
@@ -298,13 +298,13 @@ RSpec.describe Project, type: :model do
         [
           { id: 1, name: "Project 1", due_on: nil,
             description: "テスト 1",
-            created_at: time_stamp, updated_at: time_stamp},
+            created_at: time_stamp, updated_at: time_stamp },
           { id: 2, name: "Project 2", due_on: nil,
             description: 'テスト 2 “暫定”',
-            created_at: time_stamp, updated_at: time_stamp},
+            created_at: time_stamp, updated_at: time_stamp },
           { id: 3, name: "Project 3", due_on: nil,
             description: "テスト 3\n(暫定)",
-            created_at: time_stamp, updated_at: time_stamp}
+            created_at: time_stamp, updated_at: time_stamp }
         ]
       end
       before do
