@@ -124,4 +124,75 @@ class User < ApplicationRecord
       end
     end
   end
+
+  def self.export(file_path, users = nil)
+    adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
+    raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
+
+    users ||= User.order(:id).all
+    select_sql =
+      User.columns.map { |x| [x.name.to_s, x.type] }.map do |col|
+        if col[1] == :datetime
+          "CASE" \
+          "  WHEN users.#{col[0]} IS NULL THEN ''" \
+          "  ELSE convert_tz(users.#{col[0]}, '+00:00','#{UTC_OFFSET}') " \
+          "END AS #{col[0]}"
+        else
+          "CASE" \
+          "  WHEN users.#{col[0]} IS NULL THEN ''" \
+          "  ELSE users.#{col[0]} " \
+          "END AS #{col[0]}"
+        end
+      end.join(',')
+
+    sql = <<-SQL.squish
+      (SELECT '#{User.column_names.join('\',\'')}')
+      UNION
+      (SELECT #{select_sql} FROM users)
+      INTO OUTFILE ?
+      FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
+    SQL
+    sql = User.sanitize_sql([sql, file_path])
+    User.connection.execute(sql)
+  end
+
+  def self.import(file_path)
+    the_time = Time.zone.now
+    rows = []
+    CSV.foreach(file_path, headers: true) do |row|
+      row_hash = row.to_hash
+      row_hash['created_at'] =
+        if row_hash['created_at'].presence
+          Time.zone.parse(row_hash['created_at'])
+        else
+          the_time
+        end
+      row_hash['updated_at'] =
+        if row_hash['updated_at'].presence
+          Time.zone.parse(row_hash['updated_at'])
+        else
+          the_time
+        end
+      row_hash['last_login_at'] =
+        if row_hash['last_login_at'].presence
+          Time.zone.parse(row_hash['last_login_at'])
+        else
+          nil
+        end
+
+      rows << row_hash
+      if rows.size > 1000
+        # User.upsert_all(rows)
+        User.insert_all(rows)
+        rows = []
+      end
+    end
+    User.insert_all(rows) if rows.size.positive?
+  end
+
+  def self.import_x(file_path)
+    CSV.foreach(file_path, headers: true) do |row|
+      User.find_or_create_by(row.to_hash)
+    end
+  end
 end

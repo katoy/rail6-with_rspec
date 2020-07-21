@@ -159,14 +159,14 @@ class Project < ApplicationRecord
     rows = []
     CSV.foreach(file_path, headers: true) do |row|
       row_hash = row.to_hash
-      row_hash[:created_at] =
-        if row_hash['created_at']
+      row_hash['created_at'] =
+        if row_hash['created_at'].presence
           Time.zone.parse(row_hash['created_at'])
         else
           the_time
         end
-      row_hash[:updated_at] =
-        if row_hash['updated_at']
+      row_hash['updated_at'] =
+        if row_hash['updated_at'].presence
           Time.zone.parse(row_hash['updated_at'])
         else
           the_time
