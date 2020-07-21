@@ -62,15 +62,15 @@ $bundle exec rails db:migrate
 $bundle exec rails s
 ```
 product モデルに to_csv_by_sql() と to_csv() メソッドを作った。  
-to_csv_by_sql() は SQL 文で csv 出力してしまうものです。  
-to_csv() は ActiveRecord::Relation を in_batch で回して CSV ファイルに書き込んでいくというものです。  
+to_csv_by_sql() は SQL 文で csv 出力してしまう実装です。  
+to_csv() は ActiveRecord::Relation を in_batch で回して CSV ファイルに書き込んでいく実装です。  
 
 メモリ上の変数や ActoveRecord で取得した レコード内容は eq などで値をチェックしていくことができます。  
 外部ファイル出力結果をどうやって rspec でテストするかをここで示します。  
 
 ### ファイル出力内容のテスト
 
-projects テーブルの内容を ctiverEcord や CSV クラスをつかって次のように実装しているメソッドがあります。
+projects テーブルの内容を ActiveRecord や CSV クラスをつかって次のように実装しているメソッドがあります。
 
 ```ruby
   def self.to_csv
@@ -90,12 +90,12 @@ projects テーブルの内容を ctiverEcord や CSV クラスをつかって�
 1 つは、 File を一括読み込みしてその内容をチェックするものです。  
 もう一つは、File への書き込処理を mock にして メモリー上にファイル内容を保持するようにして、その内容をチェックするものです。  
 
-ファイルを実際に読み混んで内容をチェックするには次のようにします。
+ファイルを実際に読み込んで内容をチェックするには次のようにします。
 ```ruby
 expect(File.read(Project.csv_name)).to eq expect_lines
 ```
 
-ファイルへ書き込まず、メモリー上へ書き込むようにするには次のようにします。
+ファイルへ書き込まずに、メモリー上へ書き込むようにするには次のようにします。
 ```ruby
       before do
         allow(File).to receive(:open)
@@ -181,7 +181,7 @@ my.ini の編集が必要になる。
 ますは、大量データを作成する rkae task に作成をする。  
 そして、そのデータを使って csv 出力の速度・メモリー量などを計測するテストを作る。  
 (実際の DB では複数のテーブルが関連して N+1 問題が発生したりする。  
-こっこでは、まずは 1 テーブルの出力において、実装の差がパフォーマンスに与える影響を示していく)
+ここでは、まずは 1 テーブルの出力において、実装の差がパフォーマンスに与える影響を示していく)
 
 - 100万件データ作成をする rake task 
 
@@ -282,13 +282,13 @@ $wc -l csvs/*.csv
  10000001 csvs/projects_2020-07-08_12_06_50_059JST.csv
 ```
 
-ヘッダ業 + データ行がそれなりに出力されているのが確認できる。  
+ヘッダ行 + データ行がそれなりに出力されているのが確認できる。  
 (もちろんこの時点で rspec テストは PASS している)
 
 
 ### ActiveRecord での方法の改善
 
-ActiveRecord での方法は SQL での方法よりは遅いとはいえ、もうすこく速くできないか？
+ActiveRecord での方法は SQL での方法よりは遅いとはいえ、もうすこし速くできないか？
 
 まずは 無駄な 列情報を取得しないようにすることで、どれくらい差がでるかを計測してみる。
 その前に rake task にメモリー使用量の計測も組み込んだ。
@@ -314,7 +314,7 @@ Calculating -------------------------------------
                         50.000  strings (     1.000  retained)
 ```
 
-select() を行うことで 5 % の速度アップ、10 % のメモリー使用量削減硬の効果があった。  
+select() を行うことで 5 % の速度アップ、10 % のメモリー使用量削減の効果があった。  
 
 参考情報
 
@@ -330,7 +330,7 @@ select() を行うことで 5 % の速度アップ、10 % のメモリー使用�
 user <--> project が 多対多 の関係を定義した。
 
 そして、user の csv 出力では、  
-　　user の id, user の名前、 所属している oprojet の名前
+　　user の id, user の名前、 所属している project の名前
 を出力するようにする。  
 ある user が複数の project に 2 つ属していれば、２行出力される。  
 
@@ -342,7 +342,7 @@ to_csv_x はいわゆる N+１ 問題が発生する方法である。
 ```bash
 sdb:make_big_db[1000000,1000000]
 ```
-として、 user を 100万, project を 100 万件 つくり, 所属 project が　0 , 1, 3, 5 になる user が存在するように設定した。
+として、 user を 100万, project を 100 万件 つくり, 所属 project が 0, 1, 3, 5 になる user が存在するように設定した。
 
 user csv 出力のベンチマーク結果を示す。
 
@@ -471,7 +471,7 @@ Calculating -------------------------------------
                         50.000  strings (     0.000  retained)
 ```
 
-SQL での import が最善とおもわれうが、ActiveRecord での imort 実装で
+SQL での import が最善とおもわれるが、ActiveRecord での imort 実装で
 どこまではやくできるかを試みる。
 
 参考情報
