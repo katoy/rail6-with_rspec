@@ -110,11 +110,10 @@ class Project < ApplicationRecord
     projects.select(*CSV_HEADERS)
   end
 
-  def self.export(file_path, projects = nil)
+  def self.export(file_path)
     adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
     raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
 
-    projects ||= Project.order(:id).all
     select_sql =
       Project.columns.map { |x| [x.name.to_s, x.type] }.map do |col|
         if col[1] == :datetime

@@ -125,11 +125,10 @@ class User < ApplicationRecord
     end
   end
 
-  def self.export(file_path, users = nil)
+  def self.export(file_path)
     adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
     raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
 
-    users ||= User.order(:id).all
     select_sql =
       User.columns.map { |x| [x.name.to_s, x.type] }.map do |col|
         if col[1] == :datetime
@@ -151,6 +150,19 @@ class User < ApplicationRecord
       (SELECT #{select_sql} FROM users)
       INTO OUTFILE ?
       FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"';
+    SQL
+    sql = User.sanitize_sql([sql, file_path])
+    User.connection.execute(sql)
+  end
+
+  def self.import_by_sql(file_path)
+    adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
+    raise "No suport the db dapter: #{adapter}" if adapter != 'mysql2'
+
+    sql = <<-SQL.squish
+      LOAD DATA LOCAL INFILE ?
+      INTO TABLE users
+      FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' IGNORE 1 LINES;
     SQL
     sql = User.sanitize_sql([sql, file_path])
     User.connection.execute(sql)
@@ -194,5 +206,19 @@ class User < ApplicationRecord
     CSV.foreach(file_path, headers: true) do |row|
       User.find_or_create_by(row.to_hash)
     end
+  end
+
+  def self.export_and_relations_by_sql(file_paths, opts)
+    adapter = Rails.configuration.database_configuration[Rails.env]["adapter"]
+    raise "No suport the db dapter: #{adapter}" if adapter != "mysql2"
+    # TODO
+  end
+
+  def self.export_and_relations(file_paths, opts = {})
+    # TODO
+  end
+
+  def self.export_and_relations_x(file_paths, opts = {})
+    # TODO
   end
 end

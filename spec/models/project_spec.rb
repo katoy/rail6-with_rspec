@@ -158,7 +158,7 @@ RSpec.describe Project, type: :model do
   end
 
   context "#export" do
-    subject { Project.export(file_path, projects) }
+    subject { Project.export(file_path) }
     include_context 'project create projects'
 
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:00') }

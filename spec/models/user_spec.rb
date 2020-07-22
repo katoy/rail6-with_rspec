@@ -159,81 +159,8 @@ RSpec.describe User, type: :model do
     end
   end
 
-  context '#csv_name' do
-    subject { User.csv_name }
-    let(:the_time) { Time.zone.parse('2020-01-02 08:59:59') }
-    include_context 'user time_travel'
-    let(:expect_csv_name) do
-      "#{Rails.root}/csvs/users_2020-01-02_08_59_59_000JST.csv"
-    end
-
-    it { is_expected.to eq expect_csv_name }
-  end
-
-  context '#to_csv' do
-    subject { User.to_csv(opts) }
-    include_context 'user create users'
-
-    let!(:the_time) { Time.zone.parse('2020-01-02 08:59:01') }
-    include_context 'user time_travel'
-    before do
-      File.delete(User.csv_name) if File.exist?(User.csv_name)
-      subject
-    end
-
-    context "with no-opts" do
-      let(:opts) { {} }
-      let(:bomed_expect_contents) do
-        "\uFEFF" + expect_lines.join('')
-      end
-
-      it { expect(File.read(User.csv_name)).to eq bomed_expect_contents }
-    end
-
-    context "with opts {offset: 1, limit: 2}" do
-      let(:opts) { { offset: 1, limit: 2 } }
-      let(:bomed_expect_contents) do
-        "\uFEFF" + expect_lines[0] +
-          expect_lines[4] + expect_lines[5] + expect_lines[6]
-      end
-
-      it { expect(File.read(User.csv_name)).to eq bomed_expect_contents }
-    end
-  end
-
-  context '#to_csv_x' do
-    subject { User.to_csv_x(opts) }
-    include_context 'user create users'
-
-    let!(:the_time) { Time.zone.parse('2020-01-02 08:59:01') }
-    include_context 'user time_travel'
-    before do
-      File.delete(User.csv_name) if File.exist?(User.csv_name)
-      subject
-    end
-
-    context "with no-opts" do
-      let(:opts) { {} }
-      let(:bomed_expect_contents) do
-        "\uFEFF" + expect_lines.join
-      end
-
-      it { expect(File.read(User.csv_name)).to eq bomed_expect_contents }
-    end
-
-    context "with opts {offset: 1, limit: 2}" do
-      let(:opts) { { offset: 1, limit: 2 } }
-      let(:bomed_expect_contents) do
-        "\uFEFF" + expect_lines[0] +
-          expect_lines[4] + expect_lines[5] + expect_lines[6]
-      end
-
-      it { expect(File.read(User.csv_name)).to eq bomed_expect_contents }
-    end
-  end
-
   context "#export" do
-    subject { User.export(file_path, users) }
+    subject { User.export(file_path) }
 
     let!(:the_time) { Time.zone.parse('2020-01-02 08:59:00') }
     include_context 'user time_travel'
